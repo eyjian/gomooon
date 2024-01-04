@@ -1,6 +1,6 @@
-// Package gomooon
+// Package utils
 // Wrote by yijian on 2024/01/02
-package gomooon
+package utils
 
 import (
 	"fmt"

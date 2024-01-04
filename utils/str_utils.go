@@ -3,9 +3,9 @@
 package utils
 
 import (
-	"fmt"
 	"math/rand"
 	"regexp"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -61,65 +61,47 @@ func GetHexNonceStr(length int) string {
 
 // IsResidentIdentityCardNumber 判断是否为身份证号
 func IsResidentIdentityCardNumber(id string) bool {
-	// 使用正则表达式匹配身份证号格式
-	pattern := `^(\d{15}|\d{17}[\dxX])$`
-	matched, err := regexp.MatchString(pattern, id)
-	if err != nil {
-		return false
-	}
-	if !matched {
+	// 身份证号码的正则表达式
+	pattern15 := `^\d{15}$`
+	pattern18 := `^\d{17}(\d|X|x)$`
+	reg15 := regexp.MustCompile(pattern15)
+	reg18 := regexp.MustCompile(pattern18)
+	is15 := reg15.MatchString(id)
+	is18 := reg18.MatchString(id)
+
+	if !is15 && !is18 {
 		return false
 	}
 
-	// 如果是15位身份证号，则转换为18位
-	if len(id) == 15 {
-		id = ConvertTo18ResidentIdentityCardNumber(id)
+	// 提取出生日期
+	var birthYear, birthMonth, birthDay int
+	if is15 {
+		birthYear, _ = strconv.Atoi("19" + id[6:8])
+		birthMonth, _ = strconv.Atoi(id[8:10])
+		birthDay, _ = strconv.Atoi(id[10:12])
+	} else {
+		birthYear, _ = strconv.Atoi(id[6:10])
+		birthMonth, _ = strconv.Atoi(id[10:12])
+		birthDay, _ = strconv.Atoi(id[12:14])
+	}
+	birthDate := time.Date(birthYear, time.Month(birthMonth), birthDay, 0, 0, 0, 0, time.UTC)
+	if birthDate.Year() != birthYear || birthDate.Month() != time.Month(birthMonth) || birthDate.Day() != birthDay {
+		return false
 	}
 
-	// 计算校验码并与身份证号中的校验码进行比较
-	checkCode := calculateCheckCode(id)
-	if checkCode == "" || string(id[len(id)-1]) != checkCode {
-		return false
+	// 如果是18位身份证，需要检查校验码
+	if is18 {
+		weights := []int{7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2}
+		checkSum := 0
+		for i := 0; i < 17; i++ {
+			num, _ := strconv.Atoi(string(id[i]))
+			checkSum += num * weights[i]
+		}
+		checkCodes := "10X98765432"
+		return string(checkCodes[checkSum%11]) == id[17:]
 	}
 
 	return true
-}
-
-// ConvertTo18ResidentIdentityCardNumber 将15位身份证号转换为18位
-func ConvertTo18ResidentIdentityCardNumber(id string) string {
-	weights := []int{7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2}
-	checkCodes := "10X98765432"
-
-	sum := 0
-	for i := 0; i < 15; i++ {
-		digit, _ := parseInt(string(id[i]))
-		sum += digit * weights[i]
-	}
-
-	checkIndex := sum % 11
-	checkDigit := checkCodes[checkIndex]
-
-	return id + string(checkDigit)
-}
-
-// calculateCheckCode 计算身份证号的校验码
-func calculateCheckCode(id string) string {
-	weights := []int{7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2}
-	checkCodes := "10X98765432"
-
-	sum := 0
-	for i := 0; i < 17; i++ {
-		digit, _ := parseInt(string(id[i]))
-		sum += digit * weights[i]
-	}
-
-	checkIndex := sum % 11
-	return string(checkCodes[checkIndex])
-}
-
-// parseInt 将字符串转换为整数
-func parseInt(s string) (int, error) {
-	return fmt.Sscanf(s, "%d")
 }
 
 // IsValidBirthdate 判断是否为有效的出生日期

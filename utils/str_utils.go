@@ -3,9 +3,14 @@
 package utils
 
 import (
+	"crypto/hmac"
+	"crypto/md5"
+	"crypto/sha256"
+	"encoding/hex"
 	"math/rand"
 	"regexp"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -133,4 +138,23 @@ func IsValidBirthdate(date string) bool {
 	}
 
 	return true
+}
+
+// Md5Sign MD5 签名
+// body 需要签名的数据
+// key 签名密钥
+func Md5Sign(body, key string) string {
+	data := body + "&key=" + key
+	hash := md5.Sum([]byte(data))
+	return strings.ToUpper(hex.EncodeToString(hash[:]))
+}
+
+// HmacSHA256Sign SHA256 签名
+// body 需要签名的数据
+// key 签名密钥
+func HmacSHA256Sign(body, key string) string {
+	data := body + "&key=" + key
+	hash := hmac.New(sha256.New, []byte(key))
+	hash.Write([]byte(data))
+	return strings.ToUpper(hex.EncodeToString(hash.Sum(nil)))
 }

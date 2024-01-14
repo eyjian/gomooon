@@ -32,7 +32,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	signedStr, err := utils.HmacSHA256Sign(*str, *key)
+	signedStr, err := utils.UpperHmacSHA256Sign(*str, *key)
 	if err != nil {
 		fmt.Println(err)
 	} else {

@@ -3,6 +3,8 @@
 package utils
 
 import (
+	"crypto/x509"
+	"encoding/pem"
 	"os"
 	"testing"
 )
@@ -15,7 +17,7 @@ func TestGetNonceStr(t *testing.T) {
 	if len(str) == strLen {
 		t.Logf("EXCEPTED: %s\n", str)
 	} else {
-		t.Errorf("UNEXCEPTED: %s\n",str)
+		t.Errorf("UNEXCEPTED: %s\n", str)
 	}
 
 	// 测试长度 28
@@ -24,7 +26,7 @@ func TestGetNonceStr(t *testing.T) {
 	if len(str) == strLen {
 		t.Logf("EXCEPTED: %s\n", str)
 	} else {
-		t.Errorf("UNEXCEPTED: %s\n",str)
+		t.Errorf("UNEXCEPTED: %s\n", str)
 	}
 }
 
@@ -72,4 +74,68 @@ func TestLowerHmacSHA256Sign(t *testing.T) {
 	} else {
 		t.Logf("signature: %s\n", signature)
 	}
+}
+
+// go test -v -run="TestRsa256SignWithPrivateKey"
+func TestRsa256SignWithPrivateKey(t *testing.T) {
+	// 读取私钥文件
+	privateKeyBytes, err := os.ReadFile("./id_rsa")
+	if err != nil {
+		t.Errorf("error reading private key file: %s\n", err.Error())
+		return
+	}
+
+	// 解析私钥
+	block, _ := pem.Decode(privateKeyBytes)
+	if block == nil {
+		t.Error("failed to decode private key")
+		return
+	}
+
+	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		t.Errorf("Error parsing private key: %s\n", err.Error())
+		return
+	}
+
+	// 待签名数据
+	data := []byte("data to be signed")
+
+	// 调用 Rsa256SignWithPrivateKey 函数进行签名
+	signature, err := Rsa256SignWithPrivateKey(privateKey, data)
+	if err != nil {
+		t.Errorf("Error signing data: %s\n", err.Error())
+		return
+	}
+
+	t.Logf("Signature: %s\n", string(signature))
+}
+
+// go test -v -run="TestRsa256SignWithPrivateKeyStr"
+func TestRsa256SignWithPrivateKeyStr(t *testing.T) {
+	// 读取私钥文件
+	privateKeyBytes, err := os.ReadFile("./id_rsa")
+	if err != nil {
+		t.Errorf("error reading private key file: %s\n", err.Error())
+		return
+	}
+
+	// 解析私钥
+	block, _ := pem.Decode(privateKeyBytes)
+	if block == nil {
+		t.Error("failed to decode private key")
+		return
+	}
+
+	// 待签名数据
+	data := []byte("data to be signed")
+
+	// 调用 Rsa256SignWithPrivateKeyStr 函数进行签名
+	signature, err := Rsa256SignWithPrivateKeyStr(privateKeyBytes, data)
+	if err != nil {
+		t.Errorf("Error signing data: %s\n", err.Error())
+		return
+	}
+
+	t.Logf("Signature: %s\n", string(signature))
 }

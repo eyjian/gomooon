@@ -182,7 +182,7 @@ func hmacSHA256Sign(data, key string, toUpper bool) (string, error) {
 	}
 }
 
-func Rsa256SignWithPrivateKey(privateKey *rsa.PrivateKey, data []byte) ([]byte, error) {
+func SHA256RSASignWithPrivateKey(privateKey *rsa.PrivateKey, data []byte) ([]byte, error) {
 	// 签名数据
 	hash := sha256.Sum256(data)
 	signature, err := rsa.SignPKCS1v15(nil, privateKey, crypto.SHA256, hash[:])
@@ -197,7 +197,7 @@ func Rsa256SignWithPrivateKey(privateKey *rsa.PrivateKey, data []byte) ([]byte, 
 	return encodedSignature, nil
 }
 
-func Rsa256SignWithPrivateKeyStr(privateKey []byte, data []byte) ([]byte, error) {
+func SHA256RSASignWithPrivateKeyStr(privateKey []byte, data []byte) ([]byte, error) {
 	// 解析私钥
 	block, _ := pem.Decode(privateKey)
 	if block == nil {

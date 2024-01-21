@@ -79,7 +79,7 @@ func TestLowerHmacSHA256Sign(t *testing.T) {
 // go test -v -run="TestRsa256SignWithPrivateKey"
 func TestRsa256SignWithPrivateKey(t *testing.T) {
 	// 读取私钥文件
-	privateKeyBytes, err := os.ReadFile("./id_rsa")
+	privateKeyBytes, err := os.ReadFile("./id_rsa_256")
 	if err != nil {
 		t.Errorf("error reading private key file: %s\n", err.Error())
 		return
@@ -114,7 +114,7 @@ func TestRsa256SignWithPrivateKey(t *testing.T) {
 // go test -v -run="TestRsa256SignWithPrivateKeyStr"
 func TestRsa256SignWithPrivateKeyStr(t *testing.T) {
 	// 读取私钥文件
-	privateKeyBytes, err := os.ReadFile("./id_rsa")
+	privateKeyBytes, err := os.ReadFile("./id_rsa_256")
 	if err != nil {
 		t.Errorf("error reading private key file: %s\n", err.Error())
 		return
@@ -128,7 +128,8 @@ func TestRsa256SignWithPrivateKeyStr(t *testing.T) {
 	}
 
 	// 待签名数据
-	data := []byte("data to be signed")
+	data := []byte("" +
+		"")
 
 	// 调用 Rsa256SignWithPrivateKeyStr 函数进行签名
 	signature, err := Rsa256SignWithPrivateKeyStr(privateKeyBytes, data)

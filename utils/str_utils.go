@@ -3,10 +3,17 @@
 package utils
 
 import (
+	"crypto"
 	"crypto/hmac"
 	"crypto/md5"
+	"crypto/rsa"
 	"crypto/sha256"
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/hex"
+	"encoding/pem"
+	"errors"
+	"fmt"
 	"math/rand"
 	"regexp"
 	"strconv"
@@ -173,4 +180,45 @@ func hmacSHA256Sign(body, key string, toUpper bool) (string, error) {
 			return strings.ToLower(hex.EncodeToString(hash.Sum(nil))), nil
 		}
 	}
+}
+
+func Rsa256SignWithPrivateKey(privateKey *rsa.PrivateKey, data []byte) ([]byte, error) {
+	// 签名数据
+	hash := sha256.Sum256(data)
+	signature, err := rsa.SignPKCS1v15(nil, privateKey, crypto.SHA256, hash[:])
+	if err != nil {
+		return nil, fmt.Errorf("failed to sign data: %v", err)
+	}
+
+	// 将签名结果转换为 Base64 编码
+	encodedSignature := make([]byte, base64.StdEncoding.EncodedLen(len(signature)))
+	base64.StdEncoding.Encode(encodedSignature, signature)
+
+	return encodedSignature, nil
+}
+
+func Rsa256SignWithPrivateKeyStr(privateKey []byte, data []byte) ([]byte, error) {
+	// 解析私钥
+	block, _ := pem.Decode(privateKey)
+	if block == nil {
+		return nil, errors.New("failed to decode private key")
+	}
+
+	privateRsa, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse private key: %v", err)
+	}
+
+	// 签名数据
+	hash := sha256.Sum256(data)
+	signature, err := rsa.SignPKCS1v15(nil, privateRsa, crypto.SHA256, hash[:])
+	if err != nil {
+		return nil, fmt.Errorf("failed to sign data: %v", err)
+	}
+
+	// 将签名结果转换为 Base64 编码
+	encodedSignature := make([]byte, base64.StdEncoding.EncodedLen(len(signature)))
+	base64.StdEncoding.Encode(encodedSignature, signature)
+
+	return encodedSignature, nil
 }

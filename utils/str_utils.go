@@ -167,6 +167,7 @@ func LowerHmacSHA256Sign(data, key string) (string, error) {
 	return hmacSHA256Sign(data, key, false)
 }
 
+// RSA（Rivest-Shamir-Adleman）是一种非对称加密算法，由 Ron Rivest、Adi Shamir 和 Leonard Adleman 于 1977 年提出
 func hmacSHA256Sign(data, key string, toUpper bool) (string, error) {
 	hash := hmac.New(sha256.New, []byte(key))
 	_, err := hash.Write([]byte(data))

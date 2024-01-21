@@ -114,7 +114,7 @@ func TestRsa256SignWithPrivateKey(t *testing.T) {
 		return
 	}
 
-	t.Logf("Signature: %s\n", string(signature))
+	t.Logf("data: %s\nsignature: %s\n", string(data), string(signature))
 }
 
 // go test -v -run="TestRsa256SignWithPrivateKeyStr"
@@ -134,8 +134,7 @@ func TestRsa256SignWithPrivateKeyStr(t *testing.T) {
 	}
 
 	// 待签名数据
-	data := []byte("" +
-		"")
+	data := []byte("data to be signed")
 
 	// 调用 Rsa256SignWithPrivateKeyStr 函数进行签名
 	signature, err := Rsa256SignWithPrivateKeyStr(privateKeyBytes, data)
@@ -144,5 +143,5 @@ func TestRsa256SignWithPrivateKeyStr(t *testing.T) {
 		return
 	}
 
-	t.Logf("Signature: %s\n", string(signature))
+	t.Logf("data: %s\nsignature: %s\n", string(data), string(signature))
 }

@@ -115,7 +115,7 @@ func TestSHA256RSASignWithPrivateKey(t *testing.T) {
 		return
 	}
 
-	t.Logf("data: %s\nsignature: %s\n", string(data), string(signature))
+	t.Logf("data: %s\nsignature: %s\n", string(data), signature)
 }
 
 // go test -v -run="TestSHA256RSASignWithPrivateKeyStr"
@@ -144,5 +144,5 @@ func TestSHA256RSASignWithPrivateKeyStr(t *testing.T) {
 		return
 	}
 
-	t.Logf("data: %s\nsignature: %s\n", string(data), string(signature))
+	t.Logf("data: %s\nsignature: %s\n", string(data), signature)
 }

@@ -157,18 +157,17 @@ func Md5Sign(body, key string) string {
 }
 
 // UpperHmacSHA256Sign SHA256 签名
-// body 需要签名的数据
+// data 需要签名的数据
 // key 签名密钥
-func UpperHmacSHA256Sign(body, key string) (string, error) {
-	return hmacSHA256Sign(body, key, true)
+func UpperHmacSHA256Sign(data, key string) (string, error) {
+	return hmacSHA256Sign(data, key, true)
 }
 
-func LowerHmacSHA256Sign(body, key string) (string, error) {
-	return hmacSHA256Sign(body, key, false)
+func LowerHmacSHA256Sign(data, key string) (string, error) {
+	return hmacSHA256Sign(data, key, false)
 }
 
-func hmacSHA256Sign(body, key string, toUpper bool) (string, error) {
-	data := body + "&key=" + key
+func hmacSHA256Sign(data, key string, toUpper bool) (string, error) {
 	hash := hmac.New(sha256.New, []byte(key))
 	_, err := hash.Write([]byte(data))
 	if err != nil {

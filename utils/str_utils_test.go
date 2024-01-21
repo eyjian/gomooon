@@ -82,8 +82,9 @@ func TestLowerHmacSHA256Sign(t *testing.T) {
 	}
 }
 
-// go test -v -run="TestRsa256SignWithPrivateKey"
-func TestRsa256SignWithPrivateKey(t *testing.T) {
+// go test -v -run="TestSHA256RSASignWithPrivateKey"
+// 在线工具：https://8gwifi.org/rsasignverifyfunctions.jsp
+func TestSHA256RSASignWithPrivateKey(t *testing.T) {
 	// 读取私钥文件
 	privateKeyBytes, err := os.ReadFile("./id_rsa_256") // 256 * 8 = 2048 位
 	if err != nil {
@@ -108,7 +109,7 @@ func TestRsa256SignWithPrivateKey(t *testing.T) {
 	data := []byte("data to be signed")
 
 	// 调用 Rsa256SignWithPrivateKey 函数进行签名
-	signature, err := Rsa256SignWithPrivateKey(privateKey, data)
+	signature, err := SHA256RSASignWithPrivateKey(privateKey, data)
 	if err != nil {
 		t.Errorf("Error signing data: %s\n", err.Error())
 		return
@@ -117,8 +118,8 @@ func TestRsa256SignWithPrivateKey(t *testing.T) {
 	t.Logf("data: %s\nsignature: %s\n", string(data), string(signature))
 }
 
-// go test -v -run="TestRsa256SignWithPrivateKeyStr"
-func TestRsa256SignWithPrivateKeyStr(t *testing.T) {
+// go test -v -run="TestSHA256RSASignWithPrivateKeyStr"
+func TestSHA256RSASignWithPrivateKeyStr(t *testing.T) {
 	// 读取私钥文件
 	privateKeyBytes, err := os.ReadFile("./id_rsa_256")
 	if err != nil {
@@ -137,7 +138,7 @@ func TestRsa256SignWithPrivateKeyStr(t *testing.T) {
 	data := []byte("data to be signed")
 
 	// 调用 Rsa256SignWithPrivateKeyStr 函数进行签名
-	signature, err := Rsa256SignWithPrivateKeyStr(privateKeyBytes, data)
+	signature, err := SHA256RSASignWithPrivateKeyStr(privateKeyBytes, data)
 	if err != nil {
 		t.Errorf("Error signing data: %s\n", err.Error())
 		return

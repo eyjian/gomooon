@@ -187,7 +187,7 @@ func SHA256RSASignWithPrivateKey(privateKey *rsa.PrivateKey, data []byte) (strin
 	hash := sha256.Sum256(data)
 	signature, err := rsa.SignPKCS1v15(nil, privateKey, crypto.SHA256, hash[:])
 	if err != nil {
-		return nil, fmt.Errorf("failed to sign data: %v", err)
+		return "", fmt.Errorf("failed to sign data: %v", err)
 	}
 
 	// 将签名结果转换为 Base64 编码
@@ -201,24 +201,23 @@ func SHA256RSASignWithPrivateKeyStr(privateKey []byte, data []byte) (string, err
 	// 解析私钥
 	block, _ := pem.Decode(privateKey)
 	if block == nil {
-		return nil, errors.New("failed to decode private key")
+		return "", errors.New("failed to decode private key")
 	}
 
 	privateRsa, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse private key: %v", err)
+		return "", fmt.Errorf("failed to parse private key: %v", err)
 	}
 
 	// 签名数据
 	hash := sha256.Sum256(data)
 	signature, err := rsa.SignPKCS1v15(nil, privateRsa, crypto.SHA256, hash[:])
 	if err != nil {
-		return nil, fmt.Errorf("failed to sign data: %v", err)
+		return "", fmt.Errorf("failed to sign data: %v", err)
 	}
 
 	// 将签名结果转换为 Base64 编码
 	encodedSignature := make([]byte, base64.StdEncoding.EncodedLen(len(signature)))
 	base64.StdEncoding.Encode(encodedSignature, signature)
-
 	return string(encodedSignature), nil
 }

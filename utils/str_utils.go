@@ -168,6 +168,7 @@ func LowerHmacSHA256Sign(data, key string) (string, error) {
 }
 
 // RSA（Rivest-Shamir-Adleman）是一种非对称加密算法，由 Ron Rivest、Adi Shamir 和 Leonard Adleman 于 1977 年提出
+// HMAC: 哈希运算消息认证码（Hash-based Message Authentication Code），由 H.Krawezyk、M.Bellare 和 R.Canetti 于 1996 年提出的一种基于 Hash 函数和密钥进行消息认证的方法，并于 1997 年作为 RFC2104 被公布
 func hmacSHA256Sign(data, key string, toUpper bool) (string, error) {
 	hash := hmac.New(sha256.New, []byte(key))
 	_, err := hash.Write([]byte(data))

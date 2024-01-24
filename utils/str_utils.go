@@ -156,6 +156,10 @@ func Md5Sign(body, key string) string {
 	return strings.ToUpper(hex.EncodeToString(hash[:]))
 }
 
+// 身份认证（信息劫持）：防冒充、防伪造（非对称加密），确保正确的用户访问正确的网站
+// 数据加密（信息加密）：防窃听（对称加密） ，使第三方无法查看明文内容
+// 数据一致性、完整性效验（信息篡改）：防篡改、防抵赖（哈希算法），内容被篡改能及时发现
+
 // UpperHmacSHA256Sign SHA256 签名
 // data 需要签名的数据
 // key 签名密钥

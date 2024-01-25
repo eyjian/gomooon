@@ -11,7 +11,7 @@ import (
 	"io"
 )
 
-// 与ECB和CBC模式只能够加密块数据不同，CFB能够将块密文（Block Cipher）转换为流密文（Stream Cipher）。
+// 与 ECB 和 CBC 模式只能够加密块数据不同，CFB 能够将块密文（Block Cipher）转换为流密文（Stream Cipher）。
 // AES 要求 key 长度只能为 128 或 192 或 256 比特中的一种，即 16 字节或 24 字节或 32 字节中的一种。
 
 // AesCFBEncryptText 加密文本
@@ -25,7 +25,7 @@ func AesCFBEncryptText(key, data string) (string, error) {
 	// 创建 AES 分组密码的实例
 	keyBytes := []byte(padToLength(key))
 
-	// 创建AES密钥
+	// 创建 AES 密钥
 	block, err := aes.NewCipher(keyBytes)
 	if err != nil {
 		return "", fmt.Errorf("new CFB encrypt cipher error: %s", err.Error())
@@ -37,7 +37,7 @@ func AesCFBEncryptText(key, data string) (string, error) {
 		return "", fmt.Errorf("CFB encrypt rand read full error: %s", err.Error())
 	}
 
-	// 创建CFB模式的加密器
+	// 创建 CFB 模式的加密器
 	stream := cipher.NewCFBEncrypter(block, iv)
 
 	// 加密明文
@@ -59,7 +59,7 @@ func AesCFBDecryptText(key, data string) (string, error) {
 	// 创建 AES 分组密码的实例
 	keyBytes := []byte(padToLength(key))
 
-	// 创建AES密钥
+	// 创建 AES 密钥
 	block, err := aes.NewCipher(keyBytes)
 	if err != nil {
 		return "", fmt.Errorf("new CFB decrypt cipher error: %s", err.Error())
@@ -71,7 +71,7 @@ func AesCFBDecryptText(key, data string) (string, error) {
 		return "", fmt.Errorf("CFB decrypt rand read full error: %s", err.Error())
 	}
 
-	// 创建CFB模式的解密器
+	// 创建 CFB 模式的解密器
 	stream := cipher.NewCFBDecrypter(block, iv)
 
 	// 解密密文

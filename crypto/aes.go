@@ -13,7 +13,7 @@ import (
 
 // pkcs7Padding 填充明文
 func pkcs7Padding(data []byte, blockSize int) []byte {
-	padding := blockSize - len(data) % blockSize
+	padding := blockSize - len(data)%blockSize
 	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
 	return append(data, padtext...)
 }
@@ -23,7 +23,7 @@ func pkcs7UnPadding(data []byte) ([]byte, error) {
 	length := len(data)
 	unpadding := int(data[length-1])
 	if unpadding > length {
-		return nil, fmt.Errorf("invalid padding")
+		return nil, fmt.Errorf("invalid pkcs7 padding")
 	}
 	return data[:(length - unpadding)], nil
 }

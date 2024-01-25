@@ -19,7 +19,7 @@ import (
 func AesCFBEncryptText(key, data string) (string, error) {
 	keyLen := len(key)
 	if keyLen > 256 {
-		return "", fmt.Errorf("length of key exceeds 256")
+		return "", fmt.Errorf("length of CFB encrypt key exceeds 256")
 	}
 
 	// 创建 AES 分组密码的实例
@@ -28,13 +28,13 @@ func AesCFBEncryptText(key, data string) (string, error) {
 	// 创建AES密钥
 	block, err := aes.NewCipher(keyBytes)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("new CFB encrypt cipher error: %s", err.Error())
 	}
 
 	// 初始化向量
 	iv := make([]byte, aes.BlockSize)
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		return "", err
+		return "", fmt.Errorf("CFB encrypt rand read full error: %s", err.Error())
 	}
 
 	// 创建CFB模式的加密器
@@ -53,7 +53,7 @@ func AesCFBEncryptText(key, data string) (string, error) {
 func AesCFBDecryptText(key, data string) (string, error) {
 	keyLen := len(key)
 	if keyLen > 256 {
-		return "", fmt.Errorf("length of key exceeds 256")
+		return "", fmt.Errorf("length of CFB decrypt key exceeds 256")
 	}
 
 	// 创建 AES 分组密码的实例
@@ -62,13 +62,13 @@ func AesCFBDecryptText(key, data string) (string, error) {
 	// 创建AES密钥
 	block, err := aes.NewCipher(keyBytes)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("new CFB decrypt cipher error: %s", err.Error())
 	}
 
 	// 初始化向量
 	iv := make([]byte, aes.BlockSize)
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		return "", err
+		return "", fmt.Errorf("CFB decrypt rand read full error: %s", err.Error())
 	}
 
 	// 创建CFB模式的解密器

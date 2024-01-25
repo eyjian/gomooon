@@ -18,14 +18,14 @@ import (
 func AesCBCEncryptText(key, data string) (string, error) {
 	keyLen := len(key)
 	if keyLen > 256 {
-		return "", fmt.Errorf("length of key exceeds 256")
+		return "", fmt.Errorf("length of CBC encrypt key exceeds 256")
 	}
 
 	// 创建 AES 分组密码的实例
 	keyBytes := []byte(padToLength(key))
 	block, err := aes.NewCipher(keyBytes)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("new CBC encrypt cipher error: %s", err.Error())
 	}
 
 	// 创建分组模式（这里使用 CBC 模式）
@@ -49,14 +49,14 @@ func AesCBCEncryptText(key, data string) (string, error) {
 func AesCBCDecryptText(key, data string) (string, error) {
 	keyLen := len(key)
 	if keyLen > 256 {
-		return "", fmt.Errorf("length of key exceeds 256")
+		return "", fmt.Errorf("length of CBC decrypt key exceeds 256")
 	}
 
 	// 创建 AES 分组密码的实例
 	keyBytes := []byte(padToLength(key))
 	block, err := aes.NewCipher(keyBytes)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("new CBC decrypt cipher error: %s", err.Error())
 	}
 
 	// 创建分组模式（这里使用 CBC 模式）
@@ -66,7 +66,7 @@ func AesCBCDecryptText(key, data string) (string, error) {
 	// 将加密后的密文转换为字节数组
 	ciphertext, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("CBC decrypt base64 decode error: %s", err.Error())
 	}
 
 	// 解密
@@ -76,7 +76,7 @@ func AesCBCDecryptText(key, data string) (string, error) {
 	// 去除填充
 	plaintext, err := pkcs7UnPadding(paddedPlaintext)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("CBC decrypt %s", err.Error())
 	}
 
 	return string(plaintext), nil

@@ -5,10 +5,8 @@ package crypto
 import (
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"io"
 )
 
 // 与 ECB 和 CBC 模式只能够加密块数据不同，CFB 能够将块密文（Block Cipher）转换为流密文（Stream Cipher）。
@@ -32,10 +30,11 @@ func AesCFBEncryptText(key, data string) (string, error) {
 	}
 
 	// 初始化向量
-	iv := make([]byte, aes.BlockSize)
-	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		return "", fmt.Errorf("CFB encrypt rand read full error: %s", err.Error())
-	}
+	iv := keyBytes[:aes.BlockSize] // 使用密钥的前 16 个字节作为初始向量
+	//iv := make([]byte, aes.BlockSize)
+	//if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+	//	return "", fmt.Errorf("CFB encrypt rand read full error: %s", err.Error())
+	//}
 
 	// 创建 CFB 模式的加密器
 	stream := cipher.NewCFBEncrypter(block, iv)
@@ -66,10 +65,11 @@ func AesCFBDecryptText(key, data string) (string, error) {
 	}
 
 	// 初始化向量
-	iv := make([]byte, aes.BlockSize)
-	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		return "", fmt.Errorf("CFB decrypt rand read full error: %s", err.Error())
-	}
+	iv := keyBytes[:aes.BlockSize] // 使用密钥的前 16 个字节作为初始向量
+	//iv := make([]byte, aes.BlockSize)
+	//if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+	//	return "", fmt.Errorf("CFB decrypt rand read full error: %s", err.Error())
+	//}
 
 	// 创建 CFB 模式的解密器
 	stream := cipher.NewCFBDecrypter(block, iv)

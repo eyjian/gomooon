@@ -5,10 +5,8 @@ package crypto
 import (
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"io"
 )
 
 // 在 OFB 模式下，先用块加密器生成密钥流（keystream），然后再将密钥流与明文流异或得到密文流，
@@ -32,10 +30,11 @@ func AesOFBEncryptText(key, data string) (string, error) {
 	}
 
 	// 初始化向量
-	iv := make([]byte, aes.BlockSize)
-	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		return "", fmt.Errorf("OFB encrypt rand read full error: %s", err.Error())
-	}
+	iv := keyBytes[:aes.BlockSize] // 使用密钥的前 16 个字节作为初始向量
+	//iv := make([]byte, aes.BlockSize)
+	//if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+	//	return "", fmt.Errorf("OFB encrypt rand read full error: %s", err.Error())
+	//}
 
 	// 创建 OFB 模式的加密器
 	stream := cipher.NewOFB(block, iv)
@@ -66,10 +65,11 @@ func AesOFBDecryptText(key, data string) (string, error) {
 	}
 
 	// 初始化向量
-	iv := make([]byte, aes.BlockSize)
-	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		return "", fmt.Errorf("OFB decrypt rand read full error: %s", err.Error())
-	}
+	iv := keyBytes[:aes.BlockSize] // 使用密钥的前 16 个字节作为初始向量
+	//iv := make([]byte, aes.BlockSize)
+	//if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+	//	return "", fmt.Errorf("OFB decrypt rand read full error: %s", err.Error())
+	//}
 
 	// 创建 OFB 模式的解密器
 	stream := cipher.NewOFB(block, iv)

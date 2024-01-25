@@ -31,12 +31,12 @@ func testAesOFBEncryptText(t *testing.T, key, data string) bool {
 		t.Logf("AesOFBEncryptText ok: %s\n", encodedCiphertext)
 
 		// 解密
-		plaintext, err := AesOFBEncryptText(key, encodedCiphertext)
+		plaintext, err := AesOFBDecryptText(key, encodedCiphertext)
 		if err != nil {
-			t.Errorf("AesOFBEncryptText error: %s\n", err.Error())
+			t.Errorf("AesOFBDecryptText error: %s\n", err.Error())
 			return false
 		} else {
-			t.Logf("AesOFBEncryptText ok: %s\n", plaintext)
+			t.Logf("AesOFBDecryptText ok: %s\n", plaintext)
 			return true
 		}
 	}

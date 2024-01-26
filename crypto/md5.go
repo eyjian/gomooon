@@ -1,6 +1,6 @@
-// Package utils
+// Package crypto
 // Wrote by yijian on 2024/01/02
-package utils
+package crypto
 
 import (
 	"crypto/md5"
@@ -10,7 +10,7 @@ import (
 
 // Md5Sign MD5 签名
 // data 需要签名的数据
-func Md5Sign(data) string {
+func Md5Sign(data string) string {
 	hash := md5.Sum([]byte(data))
 	return strings.ToUpper(hex.EncodeToString(hash[:]))
 }

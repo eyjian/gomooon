@@ -5,7 +5,6 @@ package utils
 import (
 	"crypto"
 	"crypto/hmac"
-	"crypto/md5"
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
@@ -145,13 +144,6 @@ func IsValidBirthdate(date string) bool {
 	}
 
 	return true
-}
-
-// Md5Sign MD5 签名
-// data 需要签名的数据
-func Md5Sign(data) string {
-	hash := md5.Sum([]byte(data))
-	return strings.ToUpper(hex.EncodeToString(hash[:]))
 }
 
 // 公钥加密、私钥解密、私钥签名、公钥验签

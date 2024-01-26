@@ -148,10 +148,8 @@ func IsValidBirthdate(date string) bool {
 }
 
 // Md5Sign MD5 签名
-// body 需要签名的数据
-// key 签名密钥
-func Md5Sign(body, key string) string {
-	data := body + "&key=" + key
+// data 需要签名的数据
+func Md5Sign(data) string {
 	hash := md5.Sum([]byte(data))
 	return strings.ToUpper(hex.EncodeToString(hash[:]))
 }

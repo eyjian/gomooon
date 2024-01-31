@@ -36,7 +36,11 @@ func AesCBCEncryptText(key, data string) (string, error) {
 	paddedPlaintext := pkcs7Padding([]byte(data), aes.BlockSize)
 
 	// 加密
-	ciphertext := make([]byte, len(paddedPlaintext))
+	paddedPlaintextLen := len(paddedPlaintext)
+	if paddedPlaintextLen % aes.BlockSize != 0 {
+		return "", fmt.Error("plaintext format data")
+	}
+	ciphertext := make([]byte, paddedPlaintextLen)
 	mode.CryptBlocks(ciphertext, paddedPlaintext)
 
 	// 将加密后的结果转换为 Base64 编码

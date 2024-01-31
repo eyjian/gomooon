@@ -74,7 +74,11 @@ func AesCBCDecryptText(key, data string) (string, error) {
 	}
 
 	// 解密
-	paddedPlaintext := make([]byte, len(ciphertext))
+	ciphertextLen := len(ciphertext)
+	if ciphertextLen % aes.BlockSize != 0 {
+		return "", fmt.Error("ciphertext format data")
+	}
+	paddedPlaintext := make([]byte, ciphertextLen)
 	mode.CryptBlocks(paddedPlaintext, ciphertext)
 
 	// 去除填充

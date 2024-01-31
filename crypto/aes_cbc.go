@@ -6,6 +6,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/base64"
+	"errors"
 	"fmt"
 )
 
@@ -38,7 +39,7 @@ func AesCBCEncryptText(key, data string) (string, error) {
 	// 加密
 	paddedPlaintextLen := len(paddedPlaintext)
 	if paddedPlaintextLen % aes.BlockSize != 0 {
-		return "", fmt.Error("plaintext format data")
+		return "", errors.New("plaintext format data")
 	}
 	ciphertext := make([]byte, paddedPlaintextLen)
 	mode.CryptBlocks(ciphertext, paddedPlaintext)
@@ -76,7 +77,7 @@ func AesCBCDecryptText(key, data string) (string, error) {
 	// 解密
 	ciphertextLen := len(ciphertext)
 	if ciphertextLen % aes.BlockSize != 0 {
-		return "", fmt.Error("ciphertext format data")
+		return "", errors.New("ciphertext format data")
 	}
 	paddedPlaintext := make([]byte, ciphertextLen)
 	mode.CryptBlocks(paddedPlaintext, ciphertext)

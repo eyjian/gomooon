@@ -60,7 +60,7 @@ func GetHexNonceStr(length int) string {
     return getNonceStr(length, hexCharset)
 }
 
-// DesensitizeStr 脱敏居民身份证号
+// DesensitizeStr 脱敏字符串
 // m 保留的前 m 个字
 // n 保留的后 n 个字
 func DesensitizeStr(str string, m, n int) string {
@@ -80,7 +80,7 @@ func DesensitizeStr(str string, m, n int) string {
     }
     visibleEnd := str[end:]
 
-    // 生成脱敏后的身份证号
+    // 生成脱敏后的值
     masked := visibleStart + strings.Repeat("*", strLen-m-n) + visibleEnd
 
     return masked

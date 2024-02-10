@@ -3,7 +3,6 @@
 package utils
 
 import (
-    "errors"
     "math/rand"
     "regexp"
     "strconv"
@@ -61,31 +60,30 @@ func GetHexNonceStr(length int) string {
     return getNonceStr(length, hexCharset)
 }
 
-// DesensitizeResidentIdentityCardNumber 脱敏居民身份证号
-func DesensitizeResidentIdentityCardNumber(id string, m, n int) (string, error) {
-    idLength := len(id)
-    if idLength != 15 && idLength != 18 { // 不是居民身份证号
-        return "", errors.New("invalid resident identity card number")
-    }
+// DesensitizeStr 脱敏居民身份证号
+// m 保留的前 m 个字
+// n 保留的后 n 个字
+func DesensitizeStr(str string, m, n int) string {
+    strLen := len(str)
 
     // 显示前 m 位
     start := 0
-    if m > idLength {
-        m = idLength
+    if m > strLen {
+        m = strLen
     }
-    visibleStart := id[start:m]
+    visibleStart := str[start:m]
 
     // 显示后 n 位
-    end := idLength - n
+    end := strLen - n
     if end < 0 {
         end = 0
     }
-    visibleEnd := id[end:]
+    visibleEnd := str[end:]
 
     // 生成脱敏后的身份证号
-    masked := visibleStart + strings.Repeat("*", idLength-m-n) + visibleEnd
+    masked := visibleStart + strings.Repeat("*", strLen-m-n) + visibleEnd
 
-    return masked, nil
+    return masked
 }
 
 // IsResidentIdentityCardNumber 判断是否为居民身份证号

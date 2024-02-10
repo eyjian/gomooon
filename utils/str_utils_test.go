@@ -28,37 +28,27 @@ func TestGetNonceStr(t *testing.T) {
     }
 }
 
-// go test -v -run="TestDesensitizeResidentIdentityCardNumber"
-func TestDesensitizeResidentIdentityCardNumber(t *testing.T) {
-    id := "11204416541220243X"
-    mask, err := DesensitizeResidentIdentityCardNumber(id, 2, 2)
-    if err != nil {
-        t.Errorf("id `%s` error: %s\n", id, err.Error())
-    } else {
-        t.Logf("id `%s` => mask: %s\n", id, mask)
-    }
-    
-    mask, err = DesensitizeResidentIdentityCardNumber(id, 3, 2)
-    if err != nil {
-        t.Errorf("id `%s` error: %s\n", id, err.Error())
-    } else {
-        t.Logf("id `%s` => mask: %s\n", id, mask)
-    }
+// go test -v -run="TestDesensitizeStr"
+func TestDesensitizeStr(t *testing.T) {
+    str := "11204416541220243X"
+    mask := DesensitizeStr(str, 2, 2)
+    t.Logf("`%s` => %s\n", str, mask)
 
-    mask, err = DesensitizeResidentIdentityCardNumber(id, 2, 1)
-    if err != nil {
-        t.Errorf("id `%s` error: %s\n", id, err.Error())
-    } else {
-        t.Logf("id `%s` => mask: %s\n", id, mask)
-    }
+    mask = DesensitizeStr(str, 3, 2)
+    t.Logf("`%s` => %s\n", str, mask)
 
-    id = "112044165412202"
-    mask, err = DesensitizeResidentIdentityCardNumber(id, 2, 2)
-    if err != nil {
-        t.Errorf("id `%s` error: %s\n", id, err.Error())
-    } else {
-        t.Logf("id `%s` => mask: %s\n", id, mask)
-    }
+    mask = DesensitizeStr(str, 2, 1)
+    t.Logf("`%s` => %s\n", str, mask)
+
+    mask = DesensitizeStr(str, 2, 0)
+    t.Logf("`%s` => %s\n", str, mask)
+
+    mask = DesensitizeStr(str, 0, 2)
+    t.Logf("`%s` => %s\n", str, mask)
+
+    str = "112044165412202"
+    mask = DesensitizeStr(str, 2, 2)
+    t.Logf("`%s` => %s\n", str, mask)
 }
 
 // 身份证号隐私数据，执行时指定

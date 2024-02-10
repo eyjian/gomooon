@@ -51,6 +51,57 @@ func TestDesensitizeStr(t *testing.T) {
     t.Logf("`%s` => %s\n", str, mask)
 }
 
+// go test -v -run="TestDesensitizeName"
+func TestDesensitizeName(t *testing.T) {
+    name := "张三"
+    mask := DesensitizeName(name, 0, 1, 3)
+    t.Logf("%s => %s\n", name, mask)
+
+    name = "张三"
+    mask = DesensitizeName(name, 1, 1, 3)
+    t.Logf("%s => %s\n", name, mask)
+
+    name = "王麻子"
+    mask = DesensitizeName(name, 1, 1, 3)
+    t.Logf("%s => %s\n", name, mask)
+
+    name = "王麻子"
+    mask = DesensitizeName(name, 0, 1, 3)
+    t.Logf("%s => %s\n", name, mask)
+
+    name = "欧阳大侠"
+    mask = DesensitizeName(name, 1, 1, 3)
+    t.Logf("%s => %s\n", name, mask)
+
+    name = "欧阳大侠"
+    mask = DesensitizeName(name, 0, 1, 3)
+    t.Logf("%s => %s\n", name, mask)
+
+    name = "张三.欧阳大侠"
+    mask = DesensitizeName(name, 1, 1, 3)
+    t.Logf("%s => %s\n", name, mask)
+
+    name = "张三.欧阳大侠"
+    mask = DesensitizeName(name, 0, 1, 3)
+    t.Logf("%s => %s\n", name, mask)
+
+    name = "张三"
+    mask = DesensitizeName(name, 1, 0, 3)
+    t.Logf("%s => %s\n", name, mask)
+
+    name = "王麻子"
+    mask = DesensitizeName(name, 1, 0, 3)
+    t.Logf("%s => %s\n", name, mask)
+
+    name = "欧阳大侠"
+    mask = DesensitizeName(name, 1, 0, 3)
+    t.Logf("%s => %s\n", name, mask)
+
+    name = "张三.欧阳大侠"
+    mask = DesensitizeName(name, 1, 0, 3)
+    t.Logf("%s => %s\n", name, mask)
+}
+
 // 身份证号隐私数据，执行时指定
 // go test -v -run="TestIsResidentIdentityCardNumber" -args FLAG ID // FLAG 只能取值 0 或者 1，1 表示 ID 为无效身份证号，0 表示为有效的身份证号
 func TestIsResidentIdentityCardNumber(t *testing.T) {

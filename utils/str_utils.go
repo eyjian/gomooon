@@ -86,6 +86,54 @@ func DesensitizeStr(str string, m, n int) string {
     return masked
 }
 
+// DesensitizeName 脱敏姓名
+// name 姓名，少数民族的姓名中间可能有点号
+// m 保留的前 m 个字
+// n 保留的后 n 个字
+// k 单个字的字节数
+func DesensitizeName(name string, m, n, k int) string {
+    if k <= 0 {
+        k = 3
+    }
+
+    var result []rune
+    runes := []rune(name)
+    dotIndex := -1
+
+    for i, r := range runes {
+        if r == '.' {
+            dotIndex = i
+            break
+        }
+    }
+
+    // If the name has only two characters
+    if len(runes) == 2 {
+        if m != 0 {
+            n = 0
+        }
+    }
+
+    if dotIndex == -1 {
+        result = append(result, runes[:m]...)
+        result = append(result, []rune(strings.Repeat("*", len(runes)-m-n))...)
+        result = append(result, runes[len(runes)-n:]...)
+    } else {
+        result = append(result, runes[:m]...)
+        result = append(result, []rune(strings.Repeat("*", dotIndex-m))...)
+        result = append(result, '.')
+
+        remain := len(runes) - dotIndex - 1 - n
+        if remain > 0 {
+            result = append(result, []rune(strings.Repeat("*", remain))...)
+        }
+
+        result = append(result, runes[len(runes)-n:]...)
+    }
+
+    return string(result)
+}
+
 // IsResidentIdentityCardNumber 判断是否为居民身份证号
 func IsResidentIdentityCardNumber(id string) bool {
     // 身份证号码的正则表达式

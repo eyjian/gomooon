@@ -28,6 +28,28 @@ func TestGetNonceStr(t *testing.T) {
     }
 }
 
+// go test -v -run="TestGetLowercaseNonceStr"
+func TestGetLowercaseNonceStr(t *testing.T) {
+    strLen := 32
+    str := GetLowercaseNonceStr(strLen)
+    if len(str) == strLen {
+        t.Logf("EXCEPTED: %s\n", str)
+    } else {
+        t.Errorf("UNEXCEPTED: %s\n", str)
+    }
+}
+
+// go test -v -run="TestGetUppercaseNonceStr"
+func TestGetUppercaseNonceStr(t *testing.T) {
+    strLen := 32
+    str := GetUppercaseNonceStr(strLen)
+    if len(str) == strLen {
+        t.Logf("EXCEPTED: %s\n", str)
+    } else {
+        t.Errorf("UNEXCEPTED: %s\n", str)
+    }
+}
+
 // go test -v -run="TestDesensitizeStr"
 func TestDesensitizeStr(t *testing.T) {
     str := "11204416541220243X"

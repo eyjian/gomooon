@@ -11,7 +11,9 @@ import (
     "time"
 )
 
-const allCharset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+const allCharset1 = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+const allCharset2 = "abcdefghijklmnopqrstuvwxyz0123456789" // 不含大写字母
+const allCharset3 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" // 不含小写字母
 const hexCharset = "abcdefABCDEF0123456789"
 
 var (
@@ -53,7 +55,15 @@ func getNonceStr(length int, charset string) string {
 }
 
 func GetNonceStr(length int) string {
-    return getNonceStr(length, allCharset)
+    return getNonceStr(length, allCharset1)
+}
+
+func GetLowercaseNonceStr(length int) string {
+    return getNonceStr(length, allCharset2)
+}
+
+func GetUppercaseNonceStr(length int) string {
+    return getNonceStr(length, allCharset3)
 }
 
 func GetHexNonceStr(length int) string {

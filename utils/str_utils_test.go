@@ -50,6 +50,17 @@ func TestGetUppercaseNonceStr(t *testing.T) {
     }
 }
 
+// go test -v -run="TestGetHexNonceStr"
+func TestGetHexNonceStr(t *testing.T) {
+    strLen := 32
+    str := GetHexNonceStr(strLen)
+    if len(str) == strLen {
+        t.Logf("EXCEPTED: %s\n", str)
+    } else {
+        t.Errorf("UNEXCEPTED: %s\n", str)
+    }
+}
+
 // go test -v -run="TestDesensitizeStr"
 func TestDesensitizeStr(t *testing.T) {
     str := "11204416541220243X"

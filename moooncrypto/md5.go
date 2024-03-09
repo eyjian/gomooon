@@ -1,6 +1,6 @@
-// Package crypto
+// Package moooncrypto
 // Wrote by yijian on 2024/01/02
-package crypto
+package moooncrypto
 
 import (
     "crypto/md5"

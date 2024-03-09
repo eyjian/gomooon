@@ -1,6 +1,6 @@
-// Package utils
+// Package mooonutils
 // Wrote by yijian on 2024/01/02
-package utils
+package mooonutils
 
 import (
     "math/rand"

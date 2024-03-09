@@ -1,6 +1,6 @@
-// Package crypto
+// Package moooncrypto
 // Wrote by yijian on 2024/02/02
-package crypto
+package moooncrypto
 
 import (
     "os"

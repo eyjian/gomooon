@@ -1,12 +1,12 @@
-// Package crypto
+// Package moooncrypto
 // Wrote by yijian on 2024/01/02
-package crypto
+package moooncrypto
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
-	"strings"
+    "crypto/hmac"
+    "crypto/sha256"
+    "encoding/hex"
+    "strings"
 )
 
 // HMAC: 哈希运算消息认证码（Hash-based Message Authentication Code），带密钥的 Hash 函数。
@@ -17,14 +17,14 @@ import (
 // key 签名密钥
 // toUpper 为 true 返回大写的签名字符串，为 false 返回小写的签名字符串
 func HmacSha256Sign(data, key string, toUpper bool) (string, error) {
-	hash := hmac.New(sha256.New, []byte(key))
-	_, err := hash.Write([]byte(data))
-	if err != nil {
-		return "", err
-	}
-	if toUpper {
-		return strings.ToUpper(hex.EncodeToString(hash.Sum(nil))), nil
-	} else {
-		return strings.ToLower(hex.EncodeToString(hash.Sum(nil))), nil
-	}
+    hash := hmac.New(sha256.New, []byte(key))
+    _, err := hash.Write([]byte(data))
+    if err != nil {
+        return "", err
+    }
+    if toUpper {
+        return strings.ToUpper(hex.EncodeToString(hash.Sum(nil))), nil
+    } else {
+        return strings.ToLower(hex.EncodeToString(hash.Sum(nil))), nil
+    }
 }

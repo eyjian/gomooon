@@ -12,9 +12,9 @@ func TestDownloadFile(t *testing.T) {
     t.Logf("%s\n", url)
 
     localFilepath := "mooon.download"
-    err := DownloadFile(url, localFilepath)
+    httpStatusCode, err := DownloadFile(url, localFilepath)
     if err != nil {
-        t.Errorf("downlaod %s error: %s\n", url, err.Error())
+        t.Errorf("downlaod %s error: (%d) %s\n", url, httpStatusCode, err.Error())
     } else {
         t.Logf("download %s to file://%s ok\n", url, localFilepath)
     }

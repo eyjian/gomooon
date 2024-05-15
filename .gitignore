@@ -1,2 +1,4 @@
 .idea
 go.sum
+moooncrypto/*.pem
+moooncrypto/*.p12

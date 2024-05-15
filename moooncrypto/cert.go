@@ -13,7 +13,8 @@ import (
 
 type CertInfo struct {
     Ver                int       `json:"ver"`                  // 证书版本
-    No                 string    `json:"cert_no"`              // 证书序列号
+    No10               string    `json:"cert_no_10"`           // 证书序列号（十进制）
+    No16               string    `json:"cert_no_16"`           // 证书序列号（十六进制）
     Subject            string    `json:"subject"`              // 证书主题
     StartTime          time.Time `json:"start_time"`           // 证书开始时间
     StopTime           time.Time `json:"stop_time"`            // 证书结束时间
@@ -42,7 +43,8 @@ func GetCertInfo(certPEM string) (*CertInfo, error) {
 
     return &CertInfo{
         Ver:                cert.Version,
-        No:                 cert.SerialNumber.String(),
+        No10:               cert.SerialNumber.Text(10),
+        No16:               cert.SerialNumber.Text(16),
         Subject:            cert.Subject.CommonName,
         StartTime:          cert.NotBefore,
         StopTime:           cert.NotAfter,

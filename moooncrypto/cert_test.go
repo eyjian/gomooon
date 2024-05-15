@@ -19,7 +19,7 @@ func TestGetCertInfo(t *testing.T) {
         if err != nil {
             t.Errorf("Failed to get certificate info: %v", err)
         } else {
-            t.Logf("Subject: %s, No: %s, Start: %s, Stop: %s\n", certInfo.Subject, certInfo.No, certInfo.StartTime, certInfo.StopTime)
+            t.Logf("Subject: %s, No: %s, Start: %s, Stop: %s\n", certInfo.Subject, certInfo.No16, certInfo.StartTime, certInfo.StopTime)
         }
     }
 }

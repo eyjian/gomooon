@@ -10,7 +10,7 @@ import (
 )
 
 type TableStruct struct {
-    Id         uint32    `gorm:"column:f_id"`
+    Id         uint32    `gorm:"column:f_id;primaryKey;autoIncrement"`
     Name       string    `gorm:"column:f_name"`
     CreateTime time.Time `gorm:"column:f_create_time"`
     UpdateTIme time.Time `gorm:"column:f_update_time"`

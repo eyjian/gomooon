@@ -3,6 +3,7 @@
 package mooonutils
 
 import (
+    "fmt"
     "math/rand"
     "regexp"
     "strconv"
@@ -177,17 +178,42 @@ func IsResidentIdentityCardNumber(id string) bool {
 
     // 如果是18位身份证，需要检查校验码
     if is18 {
-        weights := []int{7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2}
-        checkSum := 0
-        for i := 0; i < 17; i++ {
-            num, _ := strconv.Atoi(string(id[i]))
-            checkSum += num * weights[i]
-        }
-        checkCodes := "10X98765432"
-        return string(checkCodes[checkSum%11]) == id[17:]
+        return calculateCheckDigit(id) == id[17:]
     }
 
     return true
+}
+
+// calculateCheckDigit 计算居民身份证号的校验码
+func calculateCheckDigit(id string) string {
+    weights := []int{7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2}
+    checkSum := 0
+    for i := 0; i < 17; i++ {
+        digit, _ := strconv.Atoi(string(id[i]))
+        checkSum += digit * weights[i]
+    }
+    checkCodes := "10X98765432"
+    return string(checkCodes[checkSum%11])
+}
+
+// GenerateResidentIdentityCardNumber 生成有效的居民身份证号，最后一位是根据前17位计算得出的校验码
+// areaCode 六位数字行政区划代码，如：440306
+// birthDate 八位数字出生日期，如：20240529
+// sequence 三位顺序码，奇数分配给男性，偶数分配给女性
+func GenerateResidentIdentityCardNumber(areaCode string, birthDate string, sequence int) (string, error) {
+    if len(areaCode) != 6 {
+        return "", fmt.Errorf("area code must be 6 digits")
+    }
+    if len(birthDate) != 8 {
+        return "", fmt.Errorf("birthdate must be 8 digits")
+    }
+    if sequence < 1 || sequence > 999 {
+        return "", fmt.Errorf("sequence number must be an integer between 1 and 999")
+    }
+    sequenceStr := fmt.Sprintf("%03d", sequence)
+    id := areaCode + birthDate + sequenceStr
+    checkDigit := calculateCheckDigit(id)
+    return id + checkDigit, nil
 }
 
 // IsValidBirthdate 判断是否为有效的出生日期
@@ -243,5 +269,5 @@ func TruncateUtf8String(utf8Str string, maxCharCount int) string {
 
 // CountUtf8Characters 计算字数，一个数字、字母和汉字都分别计 1
 func CountUtf8Characters(utf8Str string) int {
-	return utf8.RuneCountInString(utf8Str)
+    return utf8.RuneCountInString(utf8Str)
 }

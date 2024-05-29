@@ -5,6 +5,7 @@ package mooonutils
 import (
     "os"
     "testing"
+    "time"
 )
 
 // go test -v -run="TestGetNonceStr"
@@ -136,8 +137,8 @@ func TestDesensitizeName(t *testing.T) {
 }
 
 // 身份证号隐私数据，执行时指定
-// go test -v -run="TestIsResidentIdentityCardNumber" -args FLAG ID // FLAG 只能取值 0 或者 1，1 表示 ID 为无效身份证号，0 表示为有效的身份证号
-func TestIsResidentIdentityCardNumber(t *testing.T) {
+// go test -v -run="TestIsResidentIdentityCardNumber1" -args FLAG ID // FLAG 只能取值 0 或者 1，1 表示 ID 为无效身份证号，0 表示为有效的身份证号
+func TestIsResidentIdentityCardNumber1(t *testing.T) {
     flag := os.Args[len(os.Args)-2]
     id := os.Args[len(os.Args)-1]
     if IsResidentIdentityCardNumber(id) {
@@ -151,6 +152,58 @@ func TestIsResidentIdentityCardNumber(t *testing.T) {
             t.Logf("%s is not ID number\n", id)
         } else {
             t.Errorf("%s is not ID number\n", id)
+        }
+    }
+}
+
+// go test -v -run="TestIsResidentIdentityCardNumber2"
+func TestIsResidentIdentityCardNumber2(t *testing.T) {
+    id := "110000202405290095"
+    if IsResidentIdentityCardNumber(id) {
+        t.Logf("%s ok\n", id)
+    } else {
+        t.Errorf("%s is not a valid id\n", id)
+    }
+
+    id = "110000202405290096"
+    if IsResidentIdentityCardNumber(id) {
+        t.Errorf("%s ok\n", id)
+    } else {
+        t.Logf("%s is not a valid id\n", id)
+    }
+
+    id = "610125199107084337"
+    if IsResidentIdentityCardNumber(id) {
+        t.Logf("%s ok\n", id)
+    } else {
+        t.Errorf("%s is not a valid id\n", id)
+    }
+
+    id = "320381198812252138"
+    if IsResidentIdentityCardNumber(id) {
+        t.Logf("%s ok\n", id)
+    } else {
+        t.Errorf("%s is not a valid id\n", id)
+    }
+
+    id = "230124196911070015"
+    if IsResidentIdentityCardNumber(id) {
+        t.Logf("%s ok\n", id)
+    } else {
+        t.Errorf("%s is not a valid id\n", id)
+    }
+}
+
+// go test -v -run="TestGenerateResidentIdentityCardNumber$"
+func TestGenerateResidentIdentityCardNumber(t *testing.T) {
+    areaCode := "110000" // 北京市
+    birthDate := time.Now().Format("20060102")
+    for i := 1; i <= 10; i++ {
+        id, err := GenerateResidentIdentityCardNumber(areaCode, birthDate, i)
+        if err != nil {
+            t.Errorf("%s\n", err.Error())
+        } else {
+            t.Logf("%s\n", id)
         }
     }
 }

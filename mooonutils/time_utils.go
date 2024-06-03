@@ -31,15 +31,15 @@ func GetCurrentTimestampString(timezone string) string {
 func String2Time(dateStr string) (time.Time, error) {
     // 定义支持的日期格式
     formats := []string{
-        "2006-01-02",          // YYYY-MM-DD
-        "2006-1-2",            // YYYY-M-D
-        "2006/01/02",          // YYYY/MM/DD
-        "2006/1/2",            // YYYY/M/D
-        "2006.01.02",          // YYYY.MM.DD
-        "2006.1.2",            // YYYY.M.D
-        "20060102",            // YYYYMMDD
-        "01-02-06",            // MM-DD-YY
-        "01/02/06",            // MM/DD/YY
+        "2006-01-02", // YYYY-MM-DD
+        "2006-1-2",   // YYYY-M-D
+        "2006/01/02", // YYYY/MM/DD
+        "2006/1/2",   // YYYY/M/D
+        "2006.01.02", // YYYY.MM.DD
+        "2006.1.2",   // YYYY.M.D
+        "20060102",   // YYYYMMDD
+        //"01-02-06",            // MM-DD-YY
+        //"01/02/06",            // MM/DD/YY
         "02-Jan-2006",         // DD-MMM-YYYY (e.g., 02-Jan-2006)
         "02 Jan 2006",         // DD MMM YYYY (e.g., 02 Jan 2006)
         "2006-Jan-02",         // YYYY-MMM-DD (e.g., 2006-Jan-02)

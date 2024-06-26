@@ -3,6 +3,8 @@
 package mooongorm
 
 import (
+    "errors"
+    "gorm.io/gorm"
     "reflect"
     "strings"
 )
@@ -36,4 +38,50 @@ func FilterFields(typeOfModel reflect.Type, filteredFields *mooonstr.StringSet) 
     }
 
     return unfilteredFields
+}
+
+// CreateInBatchesWithoutTransaction inserts value in batches of batchSize without transaction
+// 使用注意：
+// 1、应当总是将 CreateInBatchesWithoutTransaction 放在一个事务中，如果返回错误调用者应当执行回滚操作；
+// 2、调用的 db 的 db.CreateBatchSize 值应当为 0，原因时 db.Create 会调用 db.CreateInBatches，而 db.CreateInBatches 会开启子事务，导致出现嵌套事务。
+func CreateInBatchesWithoutTransaction(db *gorm.DB, value interface{}, batchSize int) *gorm.DB {
+    // 检查参数是否有效
+    if batchSize <= 0 {
+        db.AddError(errors.New("batch size must be a positive integer"))
+        return db
+    }
+
+    reflectValue := reflect.Indirect(reflect.ValueOf(value))
+    switch reflectValue.Kind() {
+    case reflect.Slice, reflect.Array:
+        var rowsAffected int64
+
+        // 获取切片的长度
+        reflectLen := reflectValue.Len()
+        if reflectLen == 0 {
+            db.AddError(errors.New("the slice is empty"))
+            return db
+        }
+
+        // 按批次插入数据
+        for i := 0; i < reflectLen; i += batchSize {
+            end := i + batchSize
+            if end > reflectLen {
+                end = reflectLen
+            }
+
+            // 插入当前批次的数据
+            err := db.Create(reflectValue.Slice(i, end).Interface()).Error
+            if err != nil {
+                db.AddError(err)
+                return db // 一旦出错就返回，调用者应当执行回滚操作
+            }
+            rowsAffected += db.RowsAffected
+            db.RowsAffected = rowsAffected
+        }
+
+        return db
+    default:
+        return db.Create(value)
+    }
 }

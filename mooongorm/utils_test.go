@@ -8,6 +8,8 @@ import (
     "gorm.io/driver/sqlite"
     "gorm.io/gorm"
     "gorm.io/gorm/logger"
+    "io"
+    "os"
     "reflect"
     "testing"
     "time"
@@ -49,6 +51,23 @@ func TestFilterFields(t *testing.T) {
     }
 }
 
+// 实现 gorm 中的接口 logger.Writer
+// SimpleFileWriter 实现 gorm 中的接口 logger.Writer
+type SimpleFileWriter struct {
+    writer io.Writer // 嵌入一个 io.Writer，可以是任何实现了 io.Writer 接口的类型，例如 *os.File
+}
+
+// NewSimpleFileWriter 创建并返回一个 *SimpleFileWriter 的指针
+func NewSimpleFileWriter(w io.Writer) *SimpleFileWriter {
+    return &SimpleFileWriter{writer: w}
+}
+
+// Printf 实现 Writer 接口的 Printf 方法
+func (sf *SimpleFileWriter) Printf(format string, args ...interface{}) {
+    // 使用 fmt.Fprintf 将格式化的字符串写入到 SimpleFileWriter 的 writer 中
+    fmt.Fprintf(sf.writer, format, args...)
+}
+
 type TestModel struct {
     ID   int    `gorm:"primaryKey"`
     Name string `gorm:"unique"`
@@ -57,9 +76,20 @@ type TestModel struct {
 
 // go test -v -run="TestCreateInBatchesWithoutTransaction$"
 func TestCreateInBatchesWithoutTransaction(t *testing.T) {
+    // 设置日志级别
+    newLogger := logger.New(
+        NewSimpleFileWriter(os.Stdout),
+        logger.Config{
+            SlowThreshold: time.Second,
+            LogLevel:      logger.Info,
+            Colorful:      true,
+        },
+    )
+
     // 初始化数据库连接
     db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{
-        Logger: logger.Default.LogMode(logger.Silent),
+        //Logger: logger.Default.LogMode(logger.Silent),
+        Logger: newLogger,
     })
     if err != nil {
         t.Fatalf("failed to connect to the database: %v", err)

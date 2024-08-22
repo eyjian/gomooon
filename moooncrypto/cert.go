@@ -6,8 +6,12 @@ import (
     "crypto/rsa"
     "crypto/x509"
     "encoding/pem"
+    "errors"
     "fmt"
     "golang.org/x/crypto/pkcs12"
+    "golang.org/x/crypto/ssh"
+    "io"
+    "os"
     "time"
 )
 
@@ -150,4 +154,55 @@ func IsOpenSslPemPrivateKey(s string) bool {
         return false
     }
     return block.Type == "OPENSSL PRIVATE KEY"
+}
+
+func Filepath2PrivateKey(filepath string) (*rsa.PrivateKey, error) {
+    file, err := os.Open(filepath)
+    if err != nil {
+        return nil, fmt.Errorf("open %s error: %s", filepath, err.Error())
+    }
+    defer file.Close()
+    return File2PrivateKey(file)
+}
+
+func File2PrivateKey(file *os.File) (*rsa.PrivateKey, error) {
+    bytes, err := io.ReadAll(file)
+    if err != nil {
+        return nil, fmt.Errorf("read %s error: %s", file.Name(), err.Error())
+    }
+    return String2PrivateKey(string(bytes))
+}
+
+func String2PrivateKey(str string) (*rsa.PrivateKey, error) {
+    var err error
+    var privateKey interface{}
+
+    // 解析 PEM 编码数据
+    block, _ := pem.Decode([]byte(str))
+    if block == nil {
+        return nil, errors.New("failed to decode PEM block containing private key")
+    }
+
+    // 解析私钥
+    switch block.Type {
+    case "RSA PRIVATE KEY":
+        privateKey, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+    case "PRIVATE KEY":
+        privateKey, err = x509.ParsePKCS8PrivateKey(block.Bytes)
+    case "EC PRIVATE KEY":
+        privateKey, err = x509.ParseECPrivateKey(block.Bytes)
+    case "OPENSSH PRIVATE KEY":
+        privateKey, err = ssh.ParseRawPrivateKey(block.Bytes)
+    default:
+        return nil, errors.New("unsupported key type")
+    }
+    if err != nil {
+        return nil, fmt.Errorf("failed to parse private key: %s", err.Error())
+    }
+
+    pk, ok := privateKey.(*rsa.PrivateKey)
+    if !ok {
+        return nil, errors.New("not an RSA private key")
+    }
+    return pk, err
 }

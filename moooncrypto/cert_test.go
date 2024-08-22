@@ -3,8 +3,11 @@
 package moooncrypto
 
 import (
+    "crypto/x509"
+    "math/big"
     "os"
     "testing"
+    "time"
 )
 
 // go test -v -run="TestGetCertInfo$"
@@ -81,5 +84,43 @@ func TestIsP1PemPrivateKey(t *testing.T) {
         } else {
             t.Logf("is cert\n")
         }
+    }
+}
+
+// go test -v -run="TestString2PrivateKey$"
+func TestString2PrivateKey(t *testing.T) {
+    privateKeyStr, err := GeneratePrivateKeyString(RSAPrivateKey, RSAKey2048)
+    if err != nil {
+        t.Errorf("Failed to generate private key: %s\n", err.Error())
+        return
+    } else {
+        t.Logf("private key: %s\n", privateKeyStr)
+    }
+
+    privateKey, err := String2PrivateKey(privateKeyStr)
+    if err != nil {
+        t.Errorf("Failed to read private key file: %s\n", err.Error())
+    } else {
+        t.Logf("private key: ok\n")
+    }
+
+    certPemString, err := GenerateCertPemStringFromPrivateKey(privateKey,
+        &CertTemplate{
+            SerialNumber: big.NewInt(1234567890),
+            Subject: CertSubject{
+                CommonName:   "localhost",
+                Organization: []string{"localhost"},
+            },
+            NotBefore:             time.Now(),
+            NotAfter:              time.Now().Add(time.Hour * 24 * 365 * 10),
+            KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+            IsCA:                  false,
+            BasicConstraintsValid: true,
+        })
+    if err != nil {
+        t.Errorf("Failed to generate cert: %s\n", err.Error())
+        return
+    } else {
+        t.Logf("cert: %s\n", certPemString)
     }
 }

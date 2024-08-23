@@ -13,8 +13,8 @@ import (
 	"time"
 )
 
-// go test -v -run="TestDownloadChangeBill$" -args private_key.pem serial_no mchid out_batch_no <out_detail_no>
-func TestDownloadChangeBill(t *testing.T) {
+// go test -v -run="TestDownloadChangeBillReceipt$" -args private_key.pem serial_no mchid out_batch_no <out_detail_no>
+func TestDownloadChangeBillReceipt(t *testing.T) {
 	numArgs := len(os.Args)
 	t.Log("args num:", numArgs)
 	if numArgs != 9 && numArgs != 10 {
@@ -46,8 +46,8 @@ func TestDownloadChangeBill(t *testing.T) {
 
 	timestamp := time.Now().Unix()
 	nonceStr := mooonutils.GetNonceStr(32)
-	resp, err := DownloadChangeBill(
-		&DownloadChangeBillReq{
+	resp, err := DownloadChangeBillReceipt(
+		&DownloadChangeBillReceiptReq{
 			Ctx:        context.Background(),
 			HttpClient: &http.Client{},
 			PrivateKey: privateKey,
@@ -62,7 +62,7 @@ func TestDownloadChangeBill(t *testing.T) {
 			OutDetailNo: outDetailNo,
 			AcceptType:  "BATCH_TRANSFER",
 
-			Filepath: fmt.Sprintf("change_bill-%s.pdf", time.Now().Format("20060102150405")),
+			Filepath: fmt.Sprintf("change_bill_receipt-%s.pdf", time.Now().Format("20060102150405")),
 		})
 	if err != nil {
 		t.Error(err)

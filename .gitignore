@@ -1,4 +1,7 @@
 .idea
 go.sum
-moooncrypto/*.pem
-moooncrypto/*.p12
+*.pem
+*.p12
+mooonwepay/*.pdf
+mooonwepay/*.csv
+mooonwepay/*.xlsx

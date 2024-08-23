@@ -14,10 +14,27 @@ import (
 
 // go test -v -run="TestGetBill$" -args private_key.pem mchid serial_no out_batch_no <out_detail_no>
 func TestGetBill(t *testing.T) {
-	privateKeyFilepath := os.Args[len(os.Args)-4]
-	mchid := os.Args[len(os.Args)-3]
-	serialNo := os.Args[len(os.Args)-2]
-	outBatchNo := os.Args[len(os.Args)-1]
+	numArgs := len(os.Args)
+	t.Log("args num:", numArgs)
+	if numArgs != 9 && numArgs != 10 {
+		t.Error("args error")
+		return
+	}
+
+	var args []string
+	if numArgs == 9 {
+		args = os.Args[len(os.Args)-4:]
+	} else {
+		args = os.Args[len(os.Args)-5:]
+	}
+	privateKeyFilepath := args[0]
+	mchid := args[1]
+	serialNo := args[2]
+	outBatchNo := args[3]
+	outDetailNo := ""
+	if len(args) > 4 {
+		outDetailNo = args[4]
+	}
 
 	privateKey, err := moooncrypto.Filepath2PrivateKey(privateKeyFilepath)
 	if err != nil {
@@ -40,6 +57,8 @@ func TestGetBill(t *testing.T) {
 		Mchid:      mchid,
 		SerialNo:   serialNo,
 		OutBatchNo: outBatchNo,
+		OutDetailNo: outDetailNo,
+		AcceptType:  "BATCH_TRANSFER",
 	}
 	t.Log(*req)
 	resp, err := GetBill(req)

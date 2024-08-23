@@ -125,7 +125,7 @@ func makeGetChangeBillSignatureString(req *GetChangeBillReq, httpReqBody string)
 	if req.AcceptType == "" || req.OutDetailNo == "" {
 		return fmt.Sprintf("POST\n%s\n%d\n%s\n%s\n", GetConsolidatedChangeBillPath, req.Timestamp, req.NonceStr, httpReqBody)
 	} else {
-		return fmt.Sprintf("POST\n%s\n%d\n%s\n%s\n", GetConsolidatedChangeBillPath, req.Timestamp, req.NonceStr, httpReqBody)
+		return fmt.Sprintf("POST\n%s\n%d\n%s\n%s\n", GetIndividualChangeBillPath, req.Timestamp, req.NonceStr, httpReqBody)
 	}
 }
 

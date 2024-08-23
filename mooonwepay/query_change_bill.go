@@ -122,8 +122,9 @@ func makeQueryChangeBillSignatureString(req *QueryChangeBillReq) string {
 		return fmt.Sprintf("GET\n%s/%s\n%d\n%s\n\n",
 			QueryConsolidatedChangeBillPath, req.OutBatchNo, req.Timestamp, req.NonceStr)
 	} else {
-		return fmt.Sprintf("GET\n%s/%s\n%d\n%s\n%s\n%s\n\n",
-			QueryConsolidatedChangeBillPath, req.OutBatchNo, req.Timestamp, req.NonceStr, req.OutDetailNo, req.AcceptType)
+		return fmt.Sprintf("GET\n%s?out_batch_no=%s&out_detail_no=%s&accept_type=%s\n%d\n%s\n\n",
+			QueryIndividualChangeBillPath, req.OutBatchNo, req.OutDetailNo, req.AcceptType,
+			req.Timestamp, req.NonceStr)
 	}
 }
 

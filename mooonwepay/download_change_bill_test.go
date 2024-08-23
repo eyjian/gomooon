@@ -22,24 +22,19 @@ func TestDownloadBill(t *testing.T) {
 		return
 	}
 
-	var (
-		privateKeyFilepath string
-		mchid              string
-		serialNo           string
-		outBatchNo         string
-		outDetailNo        string
-	)
+	var args []string
 	if numArgs == 9 {
-		privateKeyFilepath = os.Args[len(os.Args)-4]
-		mchid = os.Args[len(os.Args)-3]
-		serialNo = os.Args[len(os.Args)-2]
-		outBatchNo = os.Args[len(os.Args)-1]
+		args = os.Args[len(os.Args)-4:]
 	} else {
-		privateKeyFilepath = os.Args[len(os.Args)-5]
-		mchid = os.Args[len(os.Args)-4]
-		serialNo = os.Args[len(os.Args)-3]
-		outBatchNo = os.Args[len(os.Args)-2]
-		outDetailNo = os.Args[len(os.Args)-1]
+		args = os.Args[len(os.Args)-5:]
+	}
+	privateKeyFilepath := args[0]
+	mchid := args[1]
+	serialNo := args[2]
+	outBatchNo := args[3]
+	outDetailNo := ""
+	if len(args) > 4 {
+		outDetailNo = args[4]
 	}
 
 	privateKey, err := moooncrypto.Filepath2PrivateKey(privateKeyFilepath)

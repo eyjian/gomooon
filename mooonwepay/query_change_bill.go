@@ -15,12 +15,12 @@ import (
 )
 
 var (
-	QueryConsolidatedBillPath = "/v3/transfer/bill-receipt"
-	QueryIndividualBillPath   = "/v3/transfer-detail/electronic-receipts"
-	QueryBillErrTag           = "query bill error"
+	QueryConsolidatedChangeBillPath = "/v3/transfer/bill-receipt"
+	QueryIndividualChangeBillPath = "/v3/transfer-detail/electronic-receipts"
+	queryChangeBillErrTag         = "query change bill error"
 )
 
-type QueryBillReq struct {
+type QueryChangeBillReq struct {
 	Ctx        context.Context
 	HttpClient *http.Client
 	PrivateKey *rsa.PrivateKey
@@ -36,7 +36,7 @@ type QueryBillReq struct {
 	AcceptType  string // 电子回单受理类型：BATCH_TRANSFER：批量转账明细电子回单 TRANSFER_TO_POCKET：企业付款至零钱电子回单 TRANSFER_TO_BANK：企业付款至银行卡电子回单
 }
 
-type QueryBillResp struct {
+type QueryChangeBillResp struct {
 	AcceptType      string `json:"accept_type,omitempty"`
 	OutBatchNo      string `json:"out_batch_no,omitempty"`
 	OutDetailNo     string `json:"out_detail_no,omitempty"`
@@ -54,42 +54,16 @@ type QueryBillResp struct {
 	HttpStatusCode int `json:"http_status_code,omitempty"`
 }
 
-// makeQueryBillSignatureString 生成签名串
-//HTTP请求方法\n
-//URL\n
-//请求时间戳\n
-//请求随机串\n
-//请求报文主体\n
-func makeQueryBillSignatureString(req *QueryBillReq) string {
-	if req.AcceptType == "" || req.OutDetailNo == "" {
-		return fmt.Sprintf("GET\n%s/%s\n%d\n%s\n\n",
-			QueryConsolidatedBillPath, req.OutBatchNo, req.Timestamp, req.NonceStr)
-	} else {
-		return fmt.Sprintf("GET\n%s/%s\n%d\n%s\n%s\n%s\n\n",
-			QueryConsolidatedBillPath, req.OutBatchNo, req.Timestamp, req.NonceStr, req.OutDetailNo, req.AcceptType)
-	}
-}
-
-func getQueryBillUrl(req *QueryBillReq) string {
-	if req.AcceptType == "" || req.OutDetailNo == "" {
-		return fmt.Sprintf("%s%s/%s",
-			req.Host, QueryConsolidatedBillPath, req.OutBatchNo)
-	} else {
-		return fmt.Sprintf("%s%s?out_batch_no=%s&out_detail_no=%s&accept_type=%s",
-			req.Host, QueryIndividualBillPath, req.OutBatchNo, req.OutDetailNo, req.AcceptType)
-	}
-}
-
-// QueryBill 查询转账账单电子回单
-func QueryBill(req *QueryBillReq) (*QueryBillResp, error) {
+// QueryChangeBill 查询转账账单电子回单
+func QueryChangeBill(req *QueryChangeBillReq) (*QueryChangeBillResp, error) {
 	ctx := req.Ctx
-	url := getQueryBillUrl(req)
+	url := getQueryChangeBillUrl(req)
 
 	// 计算签名
-	signatureString := makeQueryBillSignatureString(req)
+	signatureString := makeQueryChangeBillSignatureString(req)
 	signature, err := moooncrypto.RsaSha256SignWithPrivateKey(req.PrivateKey, []byte(signatureString))
 	if err != nil {
-		return nil, fmt.Errorf("%s: rsa sha256 sign error: %s", QueryBillErrTag, err.Error())
+		return nil, fmt.Errorf("%s: rsa sha256 sign error: %s", queryChangeBillErrTag, err.Error())
 	}
 
 	// 生成 Authorization
@@ -98,7 +72,7 @@ func QueryBill(req *QueryBillReq) (*QueryBillResp, error) {
 	// 构建请求
 	httpReq, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("%s: new http request error: %s", QueryBillErrTag, err.Error())
+		return nil, fmt.Errorf("%s: new http request error: %s", queryChangeBillErrTag, err.Error())
 	}
 
 	// 设置请求头
@@ -107,17 +81,17 @@ func QueryBill(req *QueryBillReq) (*QueryBillResp, error) {
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpResp, err := req.HttpClient.Do(httpReq)
 	if err != nil {
-		return nil, fmt.Errorf("%s: do http request error: %s", QueryBillErrTag, err.Error())
+		return nil, fmt.Errorf("%s: do http request error: %s", queryChangeBillErrTag, err.Error())
 	}
 	defer httpResp.Body.Close()
 
 	// 读取响应
-	resp := &QueryBillResp{
+	resp := &QueryChangeBillResp{
 		HttpStatusCode: httpResp.StatusCode,
 	}
 	respBodyBytes, err := io.ReadAll(httpResp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("%s: read http body error: %s", QueryBillErrTag, err.Error())
+		return nil, fmt.Errorf("%s: read http body error: %s", queryChangeBillErrTag, err.Error())
 	}
 
 	// 解析响应
@@ -125,14 +99,40 @@ func QueryBill(req *QueryBillReq) (*QueryBillResp, error) {
 	if httpResp.StatusCode != http.StatusOK {
 		// {"code":"RESOURCE_ALREADY_EXISTS","message":"该批次回单已申请，您可在通过查询电子回单接口来获取单据信息"}
 		if httpResp.StatusCode == http.StatusUnauthorized {
-			return resp, fmt.Errorf("%s: unauthorized, possible authorization incorrect or out_batch_no error", QueryBillErrTag)
+			return resp, fmt.Errorf("%s: unauthorized, possible authorization incorrect or out_batch_no error", queryChangeBillErrTag)
 		} else {
-			return resp, fmt.Errorf("%s: http response %d", QueryBillErrTag, httpResp.StatusCode)
+			return resp, fmt.Errorf("%s: http response %d", queryChangeBillErrTag, httpResp.StatusCode)
 		}
 	}
 	if err != nil {
-		return nil, fmt.Errorf("%s: json unmarshal http response error: %s\n", QueryBillErrTag, err.Error())
+		return nil, fmt.Errorf("%s: json unmarshal http response error: %s\n", queryChangeBillErrTag, err.Error())
 	}
 
 	return resp, nil
+}
+
+// makeQueryBillSignatureString 生成签名串
+//HTTP请求方法\n
+//URL\n
+//请求时间戳\n
+//请求随机串\n
+//请求报文主体\n
+func makeQueryChangeBillSignatureString(req *QueryChangeBillReq) string {
+	if req.AcceptType == "" || req.OutDetailNo == "" {
+		return fmt.Sprintf("GET\n%s/%s\n%d\n%s\n\n",
+			QueryConsolidatedChangeBillPath, req.OutBatchNo, req.Timestamp, req.NonceStr)
+	} else {
+		return fmt.Sprintf("GET\n%s/%s\n%d\n%s\n%s\n%s\n\n",
+			QueryConsolidatedChangeBillPath, req.OutBatchNo, req.Timestamp, req.NonceStr, req.OutDetailNo, req.AcceptType)
+	}
+}
+
+func getQueryChangeBillUrl(req *QueryChangeBillReq) string {
+	if req.AcceptType == "" || req.OutDetailNo == "" {
+		return fmt.Sprintf("%s%s/%s",
+			req.Host, QueryConsolidatedChangeBillPath, req.OutBatchNo)
+	} else {
+		return fmt.Sprintf("%s%s?out_batch_no=%s&out_detail_no=%s&accept_type=%s",
+			req.Host, QueryIndividualChangeBillPath, req.OutBatchNo, req.OutDetailNo, req.AcceptType)
+	}
 }

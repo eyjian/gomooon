@@ -5,7 +5,8 @@ package mooonutils
 import (
     "fmt"
     "math/rand"
-    "regexp"
+	"net/url"
+	"regexp"
     "strconv"
     "strings"
     "sync"
@@ -270,4 +271,12 @@ func TruncateUtf8String(utf8Str string, maxCharCount int) string {
 // CountUtf8Characters 计算字数，一个数字、字母和汉字都分别计 1
 func CountUtf8Characters(utf8Str string) int {
     return utf8.RuneCountInString(utf8Str)
+}
+
+// ExtractUrlPath 提取 url 路径
+func ExtractUrlPath(urlStr string) string {
+	parsedUrl, _ := url.Parse(urlStr)
+	parsedUrl.Scheme = ""
+	parsedUrl.Host = ""
+	return parsedUrl.String()
 }

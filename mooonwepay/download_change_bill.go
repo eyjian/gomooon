@@ -7,16 +7,20 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
+	"github.com/eyjian/gomooon/mooonutils"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 )
 import (
 	"github.com/eyjian/gomooon/moooncrypto"
 )
 
-type DownloadBillReq struct {
+var (
+	downloadChangeBillErrTag         = "download change bill error"
+)
+
+type DownloadChangeBillReq struct {
 	Ctx        context.Context
 	HttpClient *http.Client
 	PrivateKey *rsa.PrivateKey
@@ -34,31 +38,21 @@ type DownloadBillReq struct {
 	Filepath string // 下载后的文件路径
 }
 
-type DownloadBillResp struct {
+type DownloadChangeBillResp struct {
 	Code    string `json:"code,omitempty"`
 	Message string `json:"message,omitempty"`
 
 	HttpStatusCode int `json:"http_status_code,omitempty"`
 }
 
-// makeDownloadBillSignatureString 生成签名串
-//HTTP请求方法\n
-//URL\n
-//请求时间戳\n
-//请求随机串\n
-//请求报文主体\n
-func makeDownloadBillSignatureString(nonceStr, downloadUrl string, timestamp int64) string {
-	return fmt.Sprintf("GET\n%s\n%d\n%s\n\n", downloadUrl, timestamp, nonceStr)
-}
-
-// DownloadBill 下载电子回单
-func DownloadBill(req *DownloadBillReq) (*DownloadBillResp, error) {
+// DownloadChangeBill 下载电子回单
+func DownloadChangeBill(req *DownloadChangeBillReq) (*DownloadChangeBillResp, error) {
 	ctx := req.Ctx
 
 	// 通过调用 QueryBill，取得下载 url
-	queryBillResp, err := getDownloadUrl(req)
+	queryBillResp, err := getChangeBillDownloadUrl(req)
 	if err != nil {
-		return &DownloadBillResp{
+		return &DownloadChangeBillResp{
 			Code:           queryBillResp.Code,
 			Message:        queryBillResp.Message,
 			HttpStatusCode: queryBillResp.HttpStatusCode,
@@ -66,11 +60,11 @@ func DownloadBill(req *DownloadBillReq) (*DownloadBillResp, error) {
 	}
 
 	// 计算签名
-	downloadPath := extractUrlPath(queryBillResp.DownloadUrl)
-	signatureString := makeDownloadBillSignatureString(req.NonceStr, downloadPath, req.Timestamp)
+	downloadPath := mooonutils.ExtractUrlPath(queryBillResp.DownloadUrl)
+	signatureString := makeDownloadChangeBillSignatureString(req.NonceStr, downloadPath, req.Timestamp)
 	signature, err := moooncrypto.RsaSha256SignWithPrivateKey(req.PrivateKey, []byte(signatureString))
 	if err != nil {
-		return nil, fmt.Errorf("download bill error: RSA SHA256 sign error: %s", err.Error())
+		return nil, fmt.Errorf("%s: RSA SHA256 sign error: %s", downloadChangeBillErrTag, err.Error())
 	}
 
 	// 生成 Authorization
@@ -79,7 +73,7 @@ func DownloadBill(req *DownloadBillReq) (*DownloadBillResp, error) {
 	// 构建请求
 	httpReq, err := http.NewRequestWithContext(ctx, "GET", queryBillResp.DownloadUrl, nil)
 	if err != nil {
-		return nil, fmt.Errorf("download bill error: new http request error: %s", err.Error())
+		return nil, fmt.Errorf("%s: new http request error: %s", downloadChangeBillErrTag, err.Error())
 	}
 
 	// 设置请求头
@@ -90,11 +84,11 @@ func DownloadBill(req *DownloadBillReq) (*DownloadBillResp, error) {
 	// 发送请求
 	httpResp, err := req.HttpClient.Do(httpReq)
 	if err != nil {
-		return nil, fmt.Errorf("download bill error: do http request error: %s", err.Error())
+		return nil, fmt.Errorf("%s: do http request error: %s", downloadChangeBillErrTag, err.Error())
 	}
 	defer httpResp.Body.Close()
 
-	resp := &DownloadBillResp{
+	resp := &DownloadChangeBillResp{
 		HttpStatusCode: httpResp.StatusCode,
 	}
 	if httpResp.StatusCode != http.StatusOK {
@@ -102,29 +96,39 @@ func DownloadBill(req *DownloadBillReq) (*DownloadBillResp, error) {
 		if err == nil {
 			json.Unmarshal(respBodyBytes, resp)
 		}
-		return resp, fmt.Errorf("download bill error: http get %s status code error: %d", queryBillResp.DownloadUrl, httpResp.StatusCode)
+		return resp, fmt.Errorf("%s: http get %s status code error: %d", downloadChangeBillErrTag, queryBillResp.DownloadUrl, httpResp.StatusCode)
 	}
 
 	// 创建文件
 	file, err := os.Create(req.Filepath)
 	if err != nil {
-		return resp, fmt.Errorf("download bill error: create %s error: %s", req.Filepath, err.Error())
+		return resp, fmt.Errorf("%s: create %s error: %s", downloadChangeBillErrTag, req.Filepath, err.Error())
 	}
 	defer file.Close()
 
 	// 写入文件
 	_, err = io.Copy(file, httpResp.Body)
 	if err != nil {
-		return resp, fmt.Errorf("download bill error: write response to %s error: %s", req.Filepath, err.Error())
+		return resp, fmt.Errorf("%s: write response to %s error: %s", downloadChangeBillErrTag, req.Filepath, err.Error())
 	}
 
 	return resp, nil
 }
 
-func getDownloadUrl(req *DownloadBillReq) (*QueryBillResp, error) {
+// makeDownloadChangeBillSignatureString 生成签名串
+//HTTP请求方法\n
+//URL\n
+//请求时间戳\n
+//请求随机串\n
+//请求报文主体\n
+func makeDownloadChangeBillSignatureString(nonceStr, downloadUrl string, timestamp int64) string {
+	return fmt.Sprintf("GET\n%s\n%d\n%s\n\n", downloadUrl, timestamp, nonceStr)
+}
+
+func getChangeBillDownloadUrl(req *DownloadChangeBillReq) (*QueryChangeBillResp, error) {
 	// 调用 QueryBill，取得下载 url
-	queryBillResp, err := QueryBill(
-		&QueryBillReq{
+	queryBillResp, err := QueryChangeBill(
+		&QueryChangeBillReq{
 			Ctx:        req.Ctx,
 			HttpClient: req.HttpClient,
 			PrivateKey: req.PrivateKey,
@@ -140,12 +144,4 @@ func getDownloadUrl(req *DownloadBillReq) (*QueryBillResp, error) {
 			AcceptType:  req.AcceptType,
 		})
 	return queryBillResp, err
-}
-
-// extractUrlPath 提取 url 路径
-func extractUrlPath(urlStr string) string {
-	parsedUrl, _ := url.Parse(urlStr)
-	parsedUrl.Scheme = ""
-	parsedUrl.Host = ""
-	return parsedUrl.String()
 }

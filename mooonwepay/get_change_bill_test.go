@@ -12,8 +12,8 @@ import (
 	"time"
 )
 
-// go test -v -run="TestGetBill$" -args private_key.pem mchid serial_no out_batch_no <out_detail_no>
-func TestGetBill(t *testing.T) {
+// go test -v -run="TestGetChangeBill$" -args private_key.pem mchid serial_no out_batch_no <out_detail_no>
+func TestGetChangeBill(t *testing.T) {
 	numArgs := len(os.Args)
 	t.Log("args num:", numArgs)
 	if numArgs != 9 && numArgs != 10 {
@@ -45,7 +45,7 @@ func TestGetBill(t *testing.T) {
 
 	timestamp := time.Now().Unix()
 	nonceStr := mooonutils.GetNonceStr(32)
-	req := &GetBillReq{
+	req := &GetChangeBillReq{
 		Ctx:        context.Background(),
 		HttpClient: &http.Client{},
 		PrivateKey: privateKey,
@@ -61,7 +61,7 @@ func TestGetBill(t *testing.T) {
 		AcceptType:  "BATCH_TRANSFER",
 	}
 	t.Log(*req)
-	resp, err := GetBill(req)
+	resp, err := GetChangeBill(req)
 	if err != nil {
 		t.Error(err)
 	}

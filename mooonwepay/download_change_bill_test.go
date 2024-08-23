@@ -13,8 +13,8 @@ import (
 	"time"
 )
 
-// go test -v -run="TestDownloadBill$" -args private_key.pem serial_no mchid out_batch_no <out_detail_no>
-func TestDownloadBill(t *testing.T) {
+// go test -v -run="TestDownloadChangeBill$" -args private_key.pem serial_no mchid out_batch_no <out_detail_no>
+func TestDownloadChangeBill(t *testing.T) {
 	numArgs := len(os.Args)
 	t.Log("args num:", numArgs)
 	if numArgs != 9 && numArgs != 10 {
@@ -46,8 +46,8 @@ func TestDownloadBill(t *testing.T) {
 
 	timestamp := time.Now().Unix()
 	nonceStr := mooonutils.GetNonceStr(32)
-	resp, err := DownloadBill(
-		&DownloadBillReq{
+	resp, err := DownloadChangeBill(
+		&DownloadChangeBillReq{
 			Ctx:        context.Background(),
 			HttpClient: &http.Client{},
 			PrivateKey: privateKey,

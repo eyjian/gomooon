@@ -52,11 +52,14 @@ func DownloadChangeBill(req *DownloadChangeBillReq) (*DownloadChangeBillResp, er
 	// 通过调用 QueryBill，取得下载 url
 	queryBillResp, err := getChangeBillDownloadUrl(req)
 	if err != nil {
-		return &DownloadChangeBillResp{
-			Code:           queryBillResp.Code,
-			Message:        queryBillResp.Message,
-			HttpStatusCode: queryBillResp.HttpStatusCode,
-		}, err
+		if queryBillResp != nil {
+			return &DownloadChangeBillResp{
+				Code:           queryBillResp.Code,
+				Message:        queryBillResp.Message,
+				HttpStatusCode: queryBillResp.HttpStatusCode,
+			}, err
+		}
+		return nil, err
 	}
 
 	// 计算签名
@@ -126,6 +129,50 @@ func makeDownloadChangeBillSignatureString(nonceStr, downloadUrl string, timesta
 }
 
 func getChangeBillDownloadUrl(req *DownloadChangeBillReq) (*QueryChangeBillResp, error) {
+	// 调用 GetBill，取得下载 url
+	getBillResp, err := GetChangeBill(
+		&GetChangeBillReq{
+			Ctx:        req.Ctx,
+			HttpClient: req.HttpClient,
+			PrivateKey: req.PrivateKey,
+
+			Host:      req.Host,
+			NonceStr:  req.NonceStr,
+			Timestamp: req.Timestamp,
+
+			Mchid:       req.Mchid,
+			SerialNo:    req.SerialNo,
+			OutBatchNo:  req.OutBatchNo,
+			OutDetailNo: req.OutDetailNo,
+			AcceptType:  req.AcceptType,
+		})
+	// ALREADY_EXISTS 转账电子回单申请单数据已存在
+	// RESOURCE_ALREADY_EXISTS 该批次回单已申请，您可在通过查询电子回单接口来获取单据信息
+	if err == nil || (getBillResp != nil && getBillResp.Code != "ALREADY_EXISTS" && getBillResp.Code != "RESOURCE_ALREADY_EXISTS") {
+		return &QueryChangeBillResp{
+			AcceptType:      getBillResp.AcceptType,
+			OutBatchNo:      getBillResp.OutBatchNo,
+			OutDetailNo:     getBillResp.OutDetailNo,
+			SignatureNo:     getBillResp.SignatureNo,
+			SignatureStatus: getBillResp.SignatureStatus,
+			HashType:        getBillResp.HashType,
+			HashValue:       getBillResp.HashValue,
+			DownloadUrl:     getBillResp.DownloadUrl,
+			CreateTime:      getBillResp.CreateTime,
+			UpdateTime:      getBillResp.UpdateTime,
+
+			Code:    getBillResp.Code,
+			Message: getBillResp.Message,
+
+			HttpStatusCode: getBillResp.HttpStatusCode,
+		}, err
+	}
+	if err != nil {
+		if getBillResp == nil || (getBillResp.Code != "ALREADY_EXISTS" && getBillResp.Code != "RESOURCE_ALREADY_EXISTS") {
+			return nil, err
+		}
+	}
+
 	// 调用 QueryBill，取得下载 url
 	queryBillResp, err := QueryChangeBill(
 		&QueryChangeBillReq{

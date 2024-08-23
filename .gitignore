@@ -1,4 +1,5 @@
 .idea
+.DS_Store
 go.sum
 *.pem
 *.p12

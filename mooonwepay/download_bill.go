@@ -60,6 +60,7 @@ type DownloadBillResp struct {
 }
 
 // DownloadBill 下载转账电子回单
+// 账单文件格式，参加微信支付官方文档：https://pay.weixin.qq.com/docs/merchant/apis/bill-download/download-bill.html
 func DownloadBill(req *DownloadBillReq) (*DownloadBillResp, error) {
 	ctx := req.Ctx
 

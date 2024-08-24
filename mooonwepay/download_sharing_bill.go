@@ -45,6 +45,7 @@ type DownloadSharingBillResp struct {
 }
 
 // DownloadSharingBill 下载转账电子回单
+// 账单文件格式，参加微信支付官方文档：https://pay.weixin.qq.com/docs/merchant/apis/profit-sharing/download-bill.html
 func DownloadSharingBill(req *DownloadSharingBillReq) (*DownloadSharingBillResp, error) {
 	ctx := req.Ctx
 

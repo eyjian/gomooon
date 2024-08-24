@@ -51,7 +51,7 @@ type ApplyBillReq struct {
 type ApplyBillResp struct {
 	HashType    string `json:"hash_type,omitempty"`    //哈希类型，目前仅有 SHA1 一种取值
 	HashValue   string `json:"hash_value,omitempty"`   // 用于校验文件的完整性
-	DownloadUrl string `json:"download_url,omitempty"` // 5 分钟内有效
+	DownloadUrl string `json:"download_url,omitempty"` // 5 分钟内有效（下载后为 gzip 压缩过的 csv 文件）
 
 	Code    string `json:"code,omitempty"`
 	Message string `json:"message,omitempty"`

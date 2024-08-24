@@ -46,6 +46,7 @@ type DownloadChangeBillReceiptResp struct {
 }
 
 // DownloadChangeBillReceipt 下载转账电子回单
+// 转账电子回单文件格式，参加微信支付官方文档：https://pay.weixin.qq.com/docs/merchant/apis/batch-transfer-to-balance/download-receipt.html
 func DownloadChangeBillReceipt(req *DownloadChangeBillReceiptReq) (*DownloadChangeBillReceiptResp, error) {
 	ctx := req.Ctx
 

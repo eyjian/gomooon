@@ -28,9 +28,9 @@ type DownloadChangeBillReceiptReq struct {
 	Host      string // 主域名：https://api.mch.weixin.qq.com，备域名：https://api2.mch.weixin.qq.com
 	NonceStr  string
 	Timestamp int64
+	Mchid     string
+	SerialNo  string
 
-	Mchid       string
-	SerialNo    string
 	OutBatchNo  string // 商家转账批次单号
 	OutDetailNo string // 商家转账明细单号（如指定表示单笔转账电子回单）
 	AcceptType  string // 电子回单受理类型：BATCH_TRANSFER：批量转账明细电子回单 TRANSFER_TO_POCKET：企业付款至零钱电子回单 TRANSFER_TO_BANK：企业付款至银行卡电子回单

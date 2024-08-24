@@ -50,7 +50,7 @@ func TestDownloadBill(t *testing.T) {
 			CompressionType: compressionType,
 			Date:            date,
 
-			Filepath: fmt.Sprintf("bill-%s.tar.gz", mooonutils.ConvertDateFormat(date)),
+			Filepath: fmt.Sprintf("bill-%s.gz", mooonutils.ConvertDateFormat(date)),
 		})
 	if err != nil {
 		t.Error(err)

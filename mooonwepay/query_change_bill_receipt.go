@@ -15,9 +15,9 @@ import (
 )
 
 var (
-	QueryConsolidatedChangeBillReceiptPath = "/v3/transfer/bill-receipt"
-	QueryIndividualChangeBillReceiptPath = "/v3/transfer-detail/electronic-receipts"
-	queryChangeBillReceiptErrTag         = "query change bill receipt error"
+	QueryChangeBillBatchReceiptPath  = "/v3/transfer/bill-receipt"
+	QueryChangeBillDetailReceiptPath = "/v3/transfer-detail/electronic-receipts"
+	queryChangeBillReceiptErrTag     = "query change bill receipt error"
 )
 
 type QueryChangeBillReceiptReq struct {
@@ -120,10 +120,10 @@ func QueryChangeBillReceipt(req *QueryChangeBillReceiptReq) (*QueryChangeBillRec
 func makeQueryChangeBillReceiptSignatureString(req *QueryChangeBillReceiptReq) string {
 	if req.AcceptType == "" || req.OutDetailNo == "" {
 		return fmt.Sprintf("GET\n%s/%s\n%d\n%s\n\n",
-			QueryConsolidatedChangeBillReceiptPath, req.OutBatchNo, req.Timestamp, req.NonceStr)
+			QueryChangeBillBatchReceiptPath, req.OutBatchNo, req.Timestamp, req.NonceStr)
 	} else {
 		return fmt.Sprintf("GET\n%s?out_batch_no=%s&out_detail_no=%s&accept_type=%s\n%d\n%s\n\n",
-			QueryIndividualChangeBillReceiptPath, req.OutBatchNo, req.OutDetailNo, req.AcceptType,
+			QueryChangeBillDetailReceiptPath, req.OutBatchNo, req.OutDetailNo, req.AcceptType,
 			req.Timestamp, req.NonceStr)
 	}
 }
@@ -131,9 +131,9 @@ func makeQueryChangeBillReceiptSignatureString(req *QueryChangeBillReceiptReq) s
 func getQueryChangeBillReceiptUrl(req *QueryChangeBillReceiptReq) string {
 	if req.AcceptType == "" || req.OutDetailNo == "" {
 		return fmt.Sprintf("%s%s/%s",
-			req.Host, QueryConsolidatedChangeBillReceiptPath, req.OutBatchNo)
+			req.Host, QueryChangeBillBatchReceiptPath, req.OutBatchNo)
 	} else {
 		return fmt.Sprintf("%s%s?out_batch_no=%s&out_detail_no=%s&accept_type=%s",
-			req.Host, QueryIndividualChangeBillReceiptPath, req.OutBatchNo, req.OutDetailNo, req.AcceptType)
+			req.Host, QueryChangeBillDetailReceiptPath, req.OutBatchNo, req.OutDetailNo, req.AcceptType)
 	}
 }

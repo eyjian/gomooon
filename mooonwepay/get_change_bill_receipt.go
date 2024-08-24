@@ -14,9 +14,9 @@ import (
 )
 
 var (
-	GetConsolidatedChangeBillReceiptPath = "/v3/transfer/bill-receipt"
-	GetIndividualChangeBillReceiptPath = "/v3/transfer-detail/electronic-receipts"
-	getChangeBillReceiptErrTag         = "get change bill receipt error"
+	GetChangeBillBatchReceiptPath  = "/v3/transfer/bill-receipt"
+	GetChangeBillDetailReceiptPath = "/v3/transfer-detail/electronic-receipts"
+	getChangeBillReceiptErrTag     = "get change bill receipt error"
 )
 
 type GetChangeBillReceiptReq struct {
@@ -123,17 +123,17 @@ func GetChangeBillReceipt(req *GetChangeBillReceiptReq) (*GetChangeBillReceiptRe
 func makeGetChangeBillReceiptSignatureString(req *GetChangeBillReceiptReq, httpReqBody string) string {
 	//return fmt.Sprintf(`POST\n%s\n%d\n%s\n%s\n`, GetBillPath, timestamp, nonceStr, httpReqBody) // 不可以
 	if req.AcceptType == "" || req.OutDetailNo == "" {
-		return fmt.Sprintf("POST\n%s\n%d\n%s\n%s\n", GetConsolidatedChangeBillReceiptPath, req.Timestamp, req.NonceStr, httpReqBody)
+		return fmt.Sprintf("POST\n%s\n%d\n%s\n%s\n", GetChangeBillBatchReceiptPath, req.Timestamp, req.NonceStr, httpReqBody)
 	} else {
-		return fmt.Sprintf("POST\n%s\n%d\n%s\n%s\n", GetIndividualChangeBillReceiptPath, req.Timestamp, req.NonceStr, httpReqBody)
+		return fmt.Sprintf("POST\n%s\n%d\n%s\n%s\n", GetChangeBillDetailReceiptPath, req.Timestamp, req.NonceStr, httpReqBody)
 	}
 }
 
 func getGetChangeBillReceiptUrl(req *GetChangeBillReceiptReq) string {
 	if req.AcceptType == "" || req.OutDetailNo == "" {
-		return req.Host + GetConsolidatedChangeBillReceiptPath
+		return req.Host + GetChangeBillBatchReceiptPath
 	} else {
-		return req.Host + GetIndividualChangeBillReceiptPath
+		return req.Host + GetChangeBillDetailReceiptPath
 	}
 }
 

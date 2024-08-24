@@ -5,9 +5,9 @@
 
 一个转账单可批量给多人转，对应的转账账单存在以上两种。
 
-# get_change_bill_receipt
+# apply_change_bill_receipt
 
-商家转账到零钱的转账电子回单申请受理
+申请商家转账到零钱的转账电子回单
 
 # query_change_bill_receipt
 
@@ -15,4 +15,4 @@
 
 # down_change_bill_receipt
 
-下载商家转账到零钱的电子回单
+下载商家转账到零钱的转账电子回单

@@ -20,6 +20,8 @@ var (
 	queryChangeBillReceiptErrTag     = "query change bill receipt error"
 )
 
+// QueryChangeBillReceiptReq 查询转账电子回单申请受理结果请求，支持受理最近两年内的转账批次单
+// 接口文档：https://pay.weixin.qq.com/docs/merchant/apis/batch-transfer-to-balance/electronic-receipt-api/create-electronic-receipt.html
 type QueryChangeBillReceiptReq struct {
 	Ctx        context.Context
 	HttpClient *http.Client
@@ -42,11 +44,11 @@ type QueryChangeBillReceiptResp struct {
 	OutDetailNo     string `json:"out_detail_no,omitempty"`
 	SignatureNo     string `json:"signature_no,omitempty"`     // 电子回单申请单号，申请单据的唯一标识
 	SignatureStatus string `json:"signature_status,omitempty"` // ACCEPTED:已受理，电子签章已受理成功 FINISHED:已完成。电子签章已处理完成
-	HashType        string `json:"hash_type,omitempty"`
-	HashValue       string `json:"hash_value,omitempty"`
-	DownloadUrl     string `json:"download_url,omitempty"` // 电子回单文件的下载地址
-	CreateTime      string `json:"create_time,omitempty"`
-	UpdateTime      string `json:"update_time,omitempty"`
+	HashType        string `json:"hash_type,omitempty"`        // 电子回单文件的 hash 方法，如：SHA256
+	HashValue       string `json:"hash_value,omitempty"`       // 电子回单文件的 hash 值，用于下载之后验证文件的正确性
+	DownloadUrl     string `json:"download_url,omitempty"`     // 电子回单文件的下载地址
+	CreateTime      string `json:"create_time,omitempty"`      // 电子签章单创建时间，按照使用 rfc3339 所定义的格式，格式为 YYYY-MM-DDThh:mm:ss+TIMEZONE
+	UpdateTime      string `json:"update_time,omitempty"`      // 电子签章单最近一次状态变更的时间，按照使用 rfc3339 所定义的格式，格式为 YYYY-MM-DDThh:mm:ss+TIMEZONE
 
 	Code    string `json:"code,omitempty"`
 	Message string `json:"message,omitempty"`

@@ -129,9 +129,9 @@ func makeDownloadChangeBillReceiptSignatureString(nonceStr, downloadUrl string, 
 }
 
 func getChangeBillReceiptDownloadUrl(req *DownloadChangeBillReceiptReq) (*QueryChangeBillReceiptResp, error) {
-	// 调用 GetBillReceipt，取得下载 url
-	getBillReceiptResp, err := GetChangeBillReceipt(
-		&GetChangeBillReceiptReq{
+	// 调用 ApplyBillReceipt，取得下载 url
+	getBillReceiptResp, err := ApplyChangeBillReceipt(
+		&ApplyChangeBillReceiptReq{
 			Ctx:        req.Ctx,
 			HttpClient: req.HttpClient,
 			PrivateKey: req.PrivateKey,

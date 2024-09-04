@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-// go test -v -run="TestDownloadChangeBillReceipt$" -args private_key.pem serial_no mchid out_batch_no <out_detail_no>
+// go test -v -run="TestDownloadChangeBillReceipt$" -args private_key.pem mchid serial_no out_batch_no <out_detail_no>
 func TestDownloadChangeBillReceipt(t *testing.T) {
 	numArgs := len(os.Args)
 	t.Log("args num:", numArgs)

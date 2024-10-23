@@ -27,6 +27,30 @@ func TestGetCurrentTimestampString(t *testing.T) {
     }
 }
 
+// go test -v -run="TestNormalizeDateTimeString"
+func TestNormalizeDateTimeString(t *testing.T) {
+	testCases := []struct {
+		dateStr      string
+		expectedStr  string
+	}{
+		{"2024年01月02日", "2024-01-02"},
+		{"2024年01月02日", "2024-01-02"},
+		{"2024年01月02日 12时03分04秒", "2024-01-02 12:03:04"},
+		{"2024年01月02日 12时03分04秒", "2024-01-02 12:03:04"},
+		{"2024年1月2日 12时3分4秒", "2024-1-2 12:3:4"},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.dateStr, func(t *testing.T) {
+			cleanedStr := NormalizeDateTimeString(tc.dateStr, true)
+			if cleanedStr != tc.expectedStr {
+				t.Errorf("CleanDateTimeString(%s) = %s; want %s", tc.dateStr, cleanedStr, tc.expectedStr)
+			} else {
+				t.Logf("CleanDateTimeString(%s) = %s; want %s", tc.dateStr, cleanedStr, tc.expectedStr)
+			}
+		})
+	}
+}
+
 // go test -v -run="TestString2Time"
 func TestString2Time(t *testing.T) {
     testCases := []struct {
@@ -56,6 +80,7 @@ func TestString2Time(t *testing.T) {
         {"Jan 02, 2024", time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC)},
         {"Jan 02 2024", time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC)},
         {"2024 Jan 02", time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC)},
+		{"2024年02月01日", time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC)},
     }
 
     for _, tc := range testCases {
@@ -66,7 +91,9 @@ func TestString2Time(t *testing.T) {
             }
             if !result.Equal(tc.expectedTime) {
                 t.Errorf("String2Time(%s) = %v; want %v", tc.dateStr, result, tc.expectedTime)
-            }
+            } else {
+				t.Logf("%s ok\n", tc.dateStr)
+			}
         })
     }
 }

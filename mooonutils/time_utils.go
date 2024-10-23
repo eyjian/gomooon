@@ -28,6 +28,13 @@ func GetCurrentTimestampString(timezone string) string {
     return strconv.FormatInt(currentTimestamp, 10)
 }
 
+func IsValidTime(s string) bool {
+    // 选择一个合适的时间格式，例如：2006-01-02 15:04:05
+    layout := "2006-01-02 15:04:05"
+    _, err := time.Parse(layout, s)
+    return err == nil
+}
+
 func String2Time(dateStr string) (time.Time, error) {
     // 定义支持的日期格式
     formats := []string{

@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	golang.org/x/crypto v0.23.0
+	golang.org/x/text v0.15.0
 	gorm.io/driver/sqlite v1.5.6
 	gorm.io/gorm v1.25.10
 )

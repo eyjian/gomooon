@@ -5,6 +5,8 @@ package mooonutils
 import (
 	"archive/zip"
 	"bytes"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
@@ -12,6 +14,32 @@ import (
 	"os"
 	"path/filepath"
 )
+
+// Md5File 计算文件的 md5
+// 返回值：文件的 md5 小写值
+func Md5File(filePath string) (string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", fmt.Errorf("open file://%s error: %s",filePath,err.Error())
+	}
+	defer file.Close()
+
+	// 创建一个MD5哈希对象
+	hash := md5.New()
+
+	// 将文件内容复制到哈希对象中
+	if _, err := io.Copy(hash, file); err != nil {
+		return "", fmt.Errorf("copy file://%s error: %s",filePath,err.Error())
+	}
+
+	//获取MD5哈希值的字节表示
+	hashBytes := hash.Sum(nil)
+
+	// 将字节表示转换为十六进制字符串
+	hashString := hex.EncodeToString(hashBytes)
+
+	return hashString, nil
+}
 
 // Unzip 解压 zip 文件
 // 返回值：解压后的文件（含目录部分，如果是当前目录“.”则仅文件名）列表

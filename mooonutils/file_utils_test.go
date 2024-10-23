@@ -3,12 +3,17 @@
 package mooonutils
 
 import (
+	"os"
 	"testing"
 )
 
 // go test -v -run="TestUnzip"
 func TestUnzip(t *testing.T) {
-	destDir := ".\\"
+	destDir, err := os.Getwd()
+	if err != nil {
+		t.Errorf("Getwd error: %s\n", err.Error())
+		return
+	}
 
 	// 文件名不含中文
 	zipFile := "Test_20231023.zip"
@@ -36,7 +41,7 @@ func TestUnzip(t *testing.T) {
 
 	// 压缩包中含目录
 	zipFile = "测试_20241023.zip"
-	paths, err = Unzip(zipFile, destDir)
+	paths, err = Unzip(zipFile, destDir, true, true)
 	if err != nil {
 		t.Errorf("unzip %s error: %s\n", zipFile, err.Error())
 	} else {

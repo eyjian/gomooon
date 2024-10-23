@@ -5,6 +5,7 @@ package mooonutils
 import (
 	"archive/zip"
 	"bytes"
+	"fmt"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
 	"io"
@@ -14,18 +15,23 @@ import (
 
 // Unzip 解压 zip 文件
 // 返回值：解压后的文件（含目录部分，如果是当前目录“.”则仅文件名）列表
-// overwrite：是否覆盖解压后的同名文件
+// options[0]：是否覆盖解压后的同名文件，默认是 true
+// options[1]：返回结果是否忽略目录，仅包含文件，默认是 true
 // destDir：解压后文件的存放目录，如果不存在会自动创建
-func Unzip(zipFile, destDir string, overwrite ...bool) ([]string, error) {
+func Unzip(zipFile, destDir string, options ...bool) ([]string, error) {
 	// 设置默认值
-	truncated := true
-	if len(overwrite) > 0 {
-		truncated = overwrite[0]
+	overwrite := true
+	ignoreDir := true
+	if len(options) > 0 {
+		overwrite = options[0]
+	}
+	if len(options) > 1 {
+		ignoreDir = options[1]
 	}
 
 	reader, err := zip.OpenReader(zipFile)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("open zipfile://%s error: %s", zipFile, err.Error())
 	}
 	defer reader.Close()
 
@@ -43,28 +49,34 @@ func Unzip(zipFile, destDir string, overwrite ...bool) ([]string, error) {
 			decodeName = file.Name
 		}
 		path := filepath.Join(destDir, decodeName)
-		paths = append(paths, path)
 
 		if file.FileInfo().IsDir() {
+			if ignoreDir {
+				continue
+			}
+			paths = append(paths, path)
 			os.MkdirAll(path, os.ModePerm)
 		} else {
-			if err = os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
-				return nil, err
+			paths = append(paths, path)
+			dirPath := filepath.Dir(path)
+			if err = os.MkdirAll(dirPath, os.ModePerm); err != nil {
+				return nil, fmt.Errorf("open dir://%s error: %s", dirPath, err.Error())
 			}
 
 			flag := os.O_WRONLY | os.O_CREATE
-			if truncated {
+			if overwrite {
 				flag = flag | os.O_TRUNC
 			}
 			outFile, err := os.OpenFile(path, flag, file.Mode())
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("open outfile://%s with flag://0x%x error: %s", path, flag, err.Error())
 			}
 
 			rc, err := file.Open()
 			if err != nil {
 				outFile.Close()
-				return nil, err
+				os.Remove(path)
+				return nil, fmt.Errorf("open infile://%s error: %s", file.Name, err.Error())
 			}
 
 			_, err = io.Copy(outFile, rc)
@@ -72,7 +84,10 @@ func Unzip(zipFile, destDir string, overwrite ...bool) ([]string, error) {
 			rc.Close()
 
 			if err != nil {
-				return nil, err
+				if _, err := os.Stat(path); !os.IsNotExist(err) {
+					os.Remove(path)
+				}
+				return nil, fmt.Errorf("copy infile://%s to outfile://%s error: %s", file.Name, path, err.Error())
 			}
 		}
 	}

@@ -22,9 +22,18 @@ func HmacSha256Sign(data, key string, toUpper bool) (string, error) {
     if err != nil {
         return "", err
     }
+
+    // hex.EncodeToString 返回的是小写的十六进制字符串
     if toUpper {
         return strings.ToUpper(hex.EncodeToString(hash.Sum(nil))), nil
     } else {
         return strings.ToLower(hex.EncodeToString(hash.Sum(nil))), nil
     }
+}
+
+// HmacSha256 HmacSha256 签名
+func HmacSha256(data, key string) string {
+    hashed := hmac.New(sha256.New, []byte(key))
+    hashed.Write([]byte(data))
+    return string(hashed.Sum(nil))
 }

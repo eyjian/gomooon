@@ -24,3 +24,11 @@ func TestHmacSha256Sign(t *testing.T) {
         }
     }
 }
+
+// go test -v -run="TestHmacSha256"
+func TestHmacSha256(t *testing.T) {
+    key := "192006250b4c09247ec02edce69f6a2d"
+    str := "123456"
+    signature := HmacSha256(str, key)
+    t.Logf("signature: %s\n", signature)
+}

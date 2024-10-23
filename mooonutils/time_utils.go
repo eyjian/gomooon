@@ -5,7 +5,8 @@ package mooonutils
 import (
     "fmt"
     "strconv"
-    "time"
+	"strings"
+	"time"
 )
 
 // GetCurrentTimestamp 获取指定时区的当前时间戳
@@ -35,6 +36,37 @@ func IsValidTime(s string) bool {
     return err == nil
 }
 
+// NormalizeDateTimeString 将中文日期或时间字符串标准化为国际标准格式
+// str 日期或者时间字符串
+// withHms 参数 str 的值是否包含了"时、分、秒"
+func NormalizeDateTimeString(str string, withHms bool) string {
+	var builder strings.Builder
+	builder.Grow(len(str)) // 预分配足够的空间以提高性能
+
+	for _, r := range str {
+		switch r {
+		case '年','月':
+			builder.WriteString("-")
+		case '日':
+				builder.WriteString("")
+		case '时', '分':
+			if withHms {
+				builder.WriteRune(':')
+			}
+		case '秒':
+			if withHms {
+				builder.WriteString("")
+			}
+		default:
+			builder.WriteRune(r)
+		}
+	}
+
+	return builder.String()
+}
+
+// String2Time 将日期字符串转换为时间对象
+// 如果 dateStr 为"YYYY年MM月DD日"格式，可将"年、月、日"替换为"-"后再调用此函数
 func String2Time(dateStr string) (time.Time, error) {
     // 定义支持的日期格式
     formats := []string{

@@ -7,6 +7,16 @@ import (
 	"testing"
 )
 
+// go test -v -run="TestMd5File"
+func TestMd5File(t *testing.T) {
+	md5Str, err := Md5File("str_utils.go")
+	if err != nil {
+		t.Errorf("md5 error: %s]\n", err.Error())
+	} else {
+		t.Logf("md5 ok: %s\n", md5Str)
+	}
+}
+
 // go test -v -run="TestUnzip"
 func TestUnzip(t *testing.T) {
 	destDir, err := os.Getwd()

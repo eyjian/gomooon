@@ -1,8 +1,9 @@
 module github.com/eyjian/gomooon
 
-go 1.17
+go 1.20
 
 require (
+	github.com/gen2brain/go-fitz v1.22.2
 	golang.org/x/crypto v0.23.0
 	golang.org/x/text v0.15.0
 	gorm.io/driver/sqlite v1.5.6

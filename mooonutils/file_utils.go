@@ -13,14 +13,29 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 )
+
+// ExtractFilenameWithoutExtension 提取不含后缀的文件名
+func ExtractFilenameWithoutExtension(path string) string {
+	// 提取文件名（包括后缀）
+	filenameWithExtension := filepath.Base(path)
+
+	// 提取文件后缀
+	extension := filepath.Ext(filenameWithExtension)
+
+	// 去掉文件后缀
+	filenameWithoutExtension := strings.TrimSuffix(filenameWithExtension, extension)
+
+	return filenameWithoutExtension
+}
 
 // Md5File 计算文件的 md5
 // 返回值：文件的 md5 小写值
 func Md5File(filePath string) (string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return "", fmt.Errorf("open file://%s error: %s",filePath,err.Error())
+		return "", fmt.Errorf("open file://%s error: %s", filePath, err.Error())
 	}
 	defer file.Close()
 
@@ -29,7 +44,7 @@ func Md5File(filePath string) (string, error) {
 
 	// 将文件内容复制到哈希对象中
 	if _, err := io.Copy(hash, file); err != nil {
-		return "", fmt.Errorf("copy file://%s error: %s",filePath,err.Error())
+		return "", fmt.Errorf("copy file://%s error: %s", filePath, err.Error())
 	}
 
 	//获取MD5哈希值的字节表示

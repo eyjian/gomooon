@@ -3,6 +3,8 @@
 go.sum
 *.pem
 *.p12
+mooonpdf/test*.jpg
+mooonpdf/test*.png
 mooonwepay/*.pdf
 mooonwepay/*.csv
 mooonwepay/*.xlsx

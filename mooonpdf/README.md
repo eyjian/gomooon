@@ -1,19 +1,3 @@
-工具类函数
-
-### str_utis.go
-
-字符串类工具函数
-
-### time_utils.go
-
-时间类工具函数
-
-### crypto
-
-常用的 MD5、签名、加密和解密
-
-### mooonpdf
-
 mooonpdf 依赖开源的 pdf 库 go-fitz，而 go-fitz 又依赖开源的 c 库 mupdf，对 ld 版本要求，2.23 版本的 ld 编译报错：
 
 ```

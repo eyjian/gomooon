@@ -48,6 +48,7 @@ func pdf2Image(pdfFilepath string, it imageType) ([]string, error) {
 	baseName := mooonutils.ExtractFilenameWithoutExtension(pdfFilepath)
 
 	// Extract pages as images
+	var imagePaths []string
 	for i := 0; i < doc.NumPage(); i++ {
 		img, err := doc.Image(i)
 		if err != nil {
@@ -71,6 +72,7 @@ func pdf2Image(pdfFilepath string, it imageType) ([]string, error) {
 			return nil, err
 		}
 		f.Close()
+		imagePaths = append(imagePaths, imageFilepath)
 	}
-	return nil, nil
+	return imagePaths, nil
 }

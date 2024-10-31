@@ -4,12 +4,10 @@ package mooonpdf
 
 import (
 	"fmt"
-	"github.com/eyjian/gomooon/mooonutils"
 	fitz "github.com/gen2brain/go-fitz"
 	"image/jpeg"
 	"image/png"
 	"os"
-	"path/filepath"
 )
 
 type imageType int
@@ -27,6 +25,8 @@ func Pdf2Jpg(pdfFilepath string) ([]string, error) {
 	return pdf2Image(pdfFilepath, jpgImage)
 }
 
+// pdf2Image 将 pdf 转为图片文件，每一页分别转成一个图片文件
+// 返回值：图片文件数组，返回的图片文件名后缀格式为：.pdf.n.ext，其中 n 为从 0 开始的页号，ext 为对应的图片文件格式，如：png 或 jpg
 func pdf2Image(pdfFilepath string, it imageType) ([]string, error) {
 	doc, err := fitz.New(pdfFilepath)
 	if err != nil {
@@ -44,8 +44,8 @@ func pdf2Image(pdfFilepath string, it imageType) ([]string, error) {
 		return nil, fmt.Errorf("unsupported image type: %d", it)
 	}
 
-	dirPath := filepath.Dir(pdfFilepath)
-	baseName := mooonutils.ExtractFilenameWithoutExtension(pdfFilepath)
+	//dirPath := filepath.Dir(pdfFilepath)
+	//baseName := mooonutils.ExtractFilenameWithoutExtension(pdfFilepath)
 
 	// Extract pages as images
 	var imagePaths []string
@@ -55,8 +55,8 @@ func pdf2Image(pdfFilepath string, it imageType) ([]string, error) {
 			return nil, err
 		}
 
-		//imageFilepath := fmt.Sprintf("%s.%d.%s", pdfFilepath, i, ext)
-		imageFilepath := fmt.Sprintf("%s/%s_%d.%s", dirPath, baseName, i, ext)
+		imageFilepath := fmt.Sprintf("%s.%d.%s", pdfFilepath, i, ext)
+		//imageFilepath := fmt.Sprintf("%s/%s_%d.%s", dirPath, baseName, i, ext)
 		f, err := os.Create(imageFilepath)
 		if err != nil {
 			return nil, err

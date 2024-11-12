@@ -3,10 +3,29 @@
 package mooonstr
 
 import (
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"regexp"
 	"strconv"
 	"strings"
 )
+
+// CamelCase 驼峰命名法
+// 蛇形命名法可以使用 github.com/stoewer/go-strcase.SnakeCase
+func CamelCase(s string) string {
+	// 使用 strings.Split 按"_"分割字符串
+	parts := strings.Split(s, "_")
+
+	// 遍历分割后的字符串切片
+	for i, part := range parts {
+		// 将每个单词的首字母大写，其余字母小写
+		// 也可使用 strings.Title，但 strings.Title 是个 Deprecated 函数
+		parts[i] = cases.Title(language.English, cases.NoLower).String(strings.ToLower(part))
+	}
+
+	// 使用 strings.Join 将处理后的字符串切片连接起来
+	return strings.Join(parts, "")
+}
 
 // JoinInt32 使用分隔符将多个 int32 串拼接成一个字符串
 func JoinInt32(elems []int32, sep string) string {

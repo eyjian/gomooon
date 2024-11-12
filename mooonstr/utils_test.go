@@ -4,6 +4,21 @@ package mooonstr
 
 import "testing"
 
+// go test -v -run="TestCamelCase"
+func TestCamelCase(t *testing.T) {
+	str := "hello_world"
+	res := CamelCase(str)
+	t.Logf("result: %s => %s\n", str, res)
+
+	str = "hello"
+	res = CamelCase(str)
+	t.Logf("result: %s => %s\n", str, res)
+
+	str = "hello1d"
+	res = CamelCase(str)
+	t.Logf("result: %s => %s\n", str, res)
+}
+
 // go test -v -run="TestJoinInt32$"
 func TestJoinInt32(t *testing.T) {
 	elems := []int32{-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}

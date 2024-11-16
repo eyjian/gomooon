@@ -27,7 +27,7 @@ type IdcardBankcardTuple struct {
 // BatchVerifyIdcardAndBankcard 批量验证身份证号码和银行卡是否匹配
 // 参数说明：
 // concurrency 一次并发验证的个数
-// data 的 key 为身份证
+// data 的 key 为身份证，调用者应保证 key 同 value 的一致性
 func (t *Face) BatchVerifyIdcardAndBankcard(concurrency int, data map[string]*IdcardBankcardTuple) (int, int, int) {
 	var wg sync.WaitGroup
 	var mutex sync.Mutex

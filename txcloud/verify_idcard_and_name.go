@@ -26,7 +26,7 @@ type IdcardNameTuple struct {
 // BatchVerifyIdcardAndName 批量验证身份证号码和姓名是否匹配
 // 参数说明：
 // concurrency 一次并发验证的个数
-// data 的 key 为身份证
+// data 的 key 为身份证，调用者应保证 key 同 value 的一致性
 func (t *Face) BatchVerifyIdcardAndName(concurrency int, data map[string]*IdcardNameTuple) (int, int, int) {
 	var wg sync.WaitGroup
 	var mutex sync.Mutex

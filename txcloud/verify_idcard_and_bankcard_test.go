@@ -7,6 +7,43 @@ import (
 	"testing"
 )
 
+// go test -v -run="TestBatchVerifyIdcardAndBankcard" -args secret_id secret_key
+func TestBatchVerifyIdcardAndBankcard(t *testing.T) {
+	args := os.Args[5:]
+	secretId := args[0]
+	secretKey := args[1]
+
+	data := map[string]*IdcardBankcardTuple{
+		"123456789012345678": {
+			Idcard: "123456789012345678",
+			Name:   "张三",
+			Bankcard: "12345678901234567890",
+		},
+		"123456789012345679": {
+			Idcard: "123456789012345679",
+			Name:   "李四",
+			Bankcard: "12345678901234567890",
+		},
+		"123456789012345680": {
+			Idcard: "123456789012345680",
+			Name:   "王五",
+			Bankcard: "12345678901234567890",
+		},
+		"123456789012345681": {
+			Idcard: "123456789012345681",
+			Name:   "赵六",
+			Bankcard: "12345678901234567890",
+		},
+	}
+
+	txCloud := NewFace(secretId, secretKey)
+	consistent, inconsistent, fail := txCloud.BatchVerifyIdcardAndBankcard(2, data)
+	t.Logf("consistent:%d, inconsistent:%d, fail:%d\n", consistent, inconsistent, fail)
+	for _, v := range data {
+		t.Logf("%s: %+v\n", v.Idcard, v)
+	}
+}
+
 // go test -v -run="TestVerifyIdcardAndBankcard" -args secret_id secret_key idcard name bankcard
 func TestVerifyIdcardAndBankcard(t *testing.T) {
 	args := os.Args[5:]

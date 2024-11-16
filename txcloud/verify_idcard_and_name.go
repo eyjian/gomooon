@@ -5,6 +5,7 @@ package txcloud
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 import (
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
@@ -14,10 +15,11 @@ import (
 
 // VerifyIdcardAndName 验证身份证号码和姓名是否匹配
 // 返回值：一致性返回 true，否则返回 false，出错返回 error；第二个返回值为验证结果描述
+// 参数 idcard 可含有空格
 func (t *Face) VerifyIdcardAndName(idcard, name string) (bool, string, error) {
 	client, _ := faceid.NewClient(t.credential, "", t.clientProfile)
 	request := faceid.NewIdCardVerificationRequest()
-	request.IdCard = common.StringPtr(idcard)
+	request.IdCard = common.StringPtr(strings.ReplaceAll(idcard, " ", ""))
 	request.Name = common.StringPtr(name)
 
 	// 发起请求

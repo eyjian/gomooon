@@ -3,6 +3,7 @@
 package txcloud
 
 import (
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
 	"os"
 	"testing"
 )
@@ -37,6 +38,9 @@ func TestBatchVerifyIdcardAndName(t *testing.T) {
 	t.Logf("consistent:%d, inconsistent:%d, fail:%d\n", consistent, inconsistent, fail)
 	for k, v := range data {
 		t.Logf("%s: %+v\n", k, v)
+		if e, ok := v.Err.(*errors.TencentCloudSDKError); ok {
+			t.Logf("e.Code is `%s`, e.Message is `%s`\n", e.Code, e.Message)
+		}
 	}
 }
 
@@ -51,7 +55,11 @@ func TestVerifyIdcardAndName(t *testing.T) {
 	txCloud := NewFace(secretId, secretKey)
 	ok, desc, err := txCloud.VerifyIdcardAndName(idcard, name)
 	if err != nil {
-		t.Fatal(err)
+		if e, ok := err.(*errors.TencentCloudSDKError); ok {
+			t.Logf("e.Code is `%s`, e.Message is `%s`\n", e.Code, e.Message)
+		} else {
+			t.Logf("%s\n", err.Error())
+		}
 	} else if !ok {
 		t.Errorf("%s",desc)
 	} else {

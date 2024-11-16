@@ -4,7 +4,6 @@ package txcloud
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -83,7 +82,8 @@ func (t *Face) VerifyIdcardAndBankcard(idcard, name, bankcard string) (bool, str
 	// 发起请求
 	response, err := client.BankCardVerification(request)
 	if _, ok := err.(*errors.TencentCloudSDKError); ok {
-		return false, "", fmt.Errorf("a txcloud API error has returned: %s", err.Error())
+		//return false, "", fmt.Errorf("a txcloud API error has returned: %s", err.Error())
+		return false, "", err
 	}
 	if err != nil {
 		return false, "", err

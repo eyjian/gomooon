@@ -1,18 +1,34 @@
-工具类函数
+# mooonutils
 
-### str_utis.go
+提供各类工具函数，还文件类、字符串类、时间类和系统类等。
 
-字符串类工具函数
+# mooonstr
 
-### time_utils.go
+专注提供字符串类工具函数。
 
-时间类工具函数
+# moooncrypto
 
-### crypto
+提供常用加密解密封装。
 
-常用的 MD5、签名、加密和解密
+# mooongorm
 
-### mooonpdf
+提供 gorm 的辅助函数。
+
+# mooonhttp
+
+提供 http 的辅助函数。
+
+# txcloud
+
+提供腾讯云的身份证、银行卡和手机号核验功能。
+
+# mooonwepay
+
+提供微信支付的下载账单和回执单等功能。
+
+# mooonpdf
+
+提供 jpg 转 png 和 pdf 转 png 的函数。
 
 mooonpdf 依赖开源的 pdf 库 go-fitz，而 go-fitz 又依赖开源的 c 库 mupdf，对 ld 版本要求，2.23 版本的 ld 编译报错：
 

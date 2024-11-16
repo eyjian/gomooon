@@ -3,7 +3,6 @@
 package txcloud
 
 import (
-	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
 	"os"
 	"testing"
 )
@@ -42,8 +41,11 @@ func TestBatchVerifyIdcardAndBankcard(t *testing.T) {
 	t.Logf("consistent:%d, inconsistent:%d, fail:%d\n", consistent, inconsistent, fail)
 	for k, v := range data {
 		t.Logf("%s: %+v\n", k, v)
-		if e, ok := v.Err.(*errors.TencentCloudSDKError); ok {
-			t.Logf("e.Code is `%s`, e.Message is `%s`\n", e.Code, e.Message)
+		errCode, errMsg := GetErrCodeAndErrMsg(v.Err)
+		if errCode != "" || errMsg != "" {
+			t.Logf("ErrCode is `%s`, ErrMessage is `%s`\n", errCode, errMsg)
+		} else {
+			t.Logf("%s\n", v.Err.Error())
 		}
 	}
 }
@@ -60,8 +62,9 @@ func TestVerifyIdcardAndBankcard(t *testing.T) {
 	txCloud := NewFace(secretId, secretKey)
 	ok, desc, err := txCloud.VerifyIdcardAndBankcard(idcard, name, bankcard)
 	if err != nil {
-		if e, ok := err.(*errors.TencentCloudSDKError); ok {
-			t.Logf("e.Code is `%s`, e.Message is `%s`\n", e.Code, e.Message)
+		errCode, errMsg := GetErrCodeAndErrMsg(err)
+		if errCode != "" || errMsg != "" {
+			t.Logf("ErrCode is `%s`, ErrMessage is `%s`\n", errCode, errMsg)
 		} else {
 			t.Logf("%s\n", err.Error())
 		}

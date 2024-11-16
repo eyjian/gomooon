@@ -4,6 +4,7 @@ package txcloud
 
 import (
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
 )
 
@@ -32,6 +33,15 @@ type FaceResponse struct {
 		RequestId   string `json:"RequestId"`
 		Result      string `json:"Result"`
 	} `json:"Response"`
+}
+
+// GetErrCodeAndErrMsg 获取腾讯云错误码和错误信息，如果不是腾讯云错则返回两个空字符串
+func GetErrCodeAndErrMsg(err error) (string, string) {
+	if e, ok := err.(*errors.TencentCloudSDKError); ok {
+		return e.Code, e.Message
+	} else {
+		return "", ""
+	}
 }
 
 // NewTxCloud 创建腾讯云对象

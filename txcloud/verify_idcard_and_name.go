@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 import (
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
@@ -25,15 +26,15 @@ type IdcardNameTuple struct {
 
 // BatchVerifyIdcardAndName 批量验证身份证号码和姓名是否匹配
 // 参数说明：
-// concurrency 一次并发验证的个数
+// concurrency 一次并发验证的个数（值应大于 0）
 // data 的 key 为身份证，调用者应保证 key 同 value 的一致性
+// 因为 data 内的对象不会变，只是对象的内容变化，因此实现不需要加锁
 func (t *Face) BatchVerifyIdcardAndName(concurrency int, data map[string]*IdcardNameTuple) (int, int, int) {
 	var wg sync.WaitGroup
-	var mutex sync.Mutex
 
-	consistent := 0 // 一致的个数
-	inconsistent := 0 // 不一致的个数
-	fail := 0 // 出错的个数
+	consistent := int32(0) // 一致的个数
+	inconsistent := int32(0) // 不一致的个数
+	fail := int32(0) // 出错的个数
 	semaphore := make(chan struct{}, concurrency)
 	for _, v := range data {
 		wg.Add(1)
@@ -53,23 +54,18 @@ func (t *Face) BatchVerifyIdcardAndName(concurrency int, data map[string]*Idcard
 				v.Consistent = ok
 				v.ErrDesc = desc
 			}
-
-			mutex.Lock()
-			defer mutex.Unlock()
-			data[v.Idcard] = v
-
 			if err != nil {
-				fail++
+				atomic.AddInt32(&fail, 1)
 			} else if ok {
-				consistent++
+				atomic.AddInt32(&consistent, 1)
 			} else {
-				inconsistent++
+				atomic.AddInt32(&inconsistent, 1)
 			}
 		}(v)
 	}
 
 	wg.Wait()
-	return consistent, inconsistent, fail
+	return int(consistent), int(inconsistent), int(fail)
 }
 
 // VerifyIdcardAndName 验证身份证号码和姓名是否匹配

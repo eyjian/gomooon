@@ -18,7 +18,24 @@ type TxCloud struct {
 	clientProfile *profile.ClientProfile
 }
 
+// FaceResponse 腾讯云 face 类接口的响应
+//{
+//	"Response": {
+//		"Description": "非法姓名（长度、格式等不正确）",
+//		"RequestId": "2ee9df1f-23b8-457d-89ba-337a9c57e4b9",
+//		"Result": "-3"
+//	}
+//}
+type FaceResponse struct {
+	Response struct {
+		Description string `json:"Description"`
+		RequestId   string `json:"RequestId"`
+		Result      string `json:"Result"`
+	} `json:"Response"`
+}
+
 // NewTxCloud 创建腾讯云对象
+// 密钥在控制台 https://console.cloud.tencent.com/cam/capi 上获取
 func NewTxCloud(secretId, secretKey, endpoint string) *TxCloud {
 	txCloud:= &TxCloud{
 		SecretId: secretId,

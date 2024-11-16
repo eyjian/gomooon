@@ -7,16 +7,15 @@ import (
 	"testing"
 )
 
-// go test -v -run="TestVerifyIdcardAndName" -args secret_id secret_key endpoint idcard name
+// go test -v -run="TestVerifyIdcardAndName" -args secret_id secret_key idcard name
 func TestVerifyIdcardAndName(t *testing.T) {
 	args := os.Args[5:]
 	secretId := args[0]
 	secretKey := args[1]
-	endpoint := args[2]
-	idcard := args[3]
-	name := args[4]
+	idcard := args[2]
+	name := args[3]
 
-	txCloud := NewTxCloud(secretId, secretKey, endpoint)
+	txCloud := NewFace(secretId, secretKey)
 	ok, desc, err := txCloud.VerifyIdcardAndName(idcard, name)
 	if err != nil {
 		t.Fatal(err)

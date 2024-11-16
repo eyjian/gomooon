@@ -25,6 +25,7 @@ type IdcardBankcardTuple struct {
 }
 
 // BatchVerifyIdcardAndBankcard 批量验证身份证号码和银行卡是否匹配
+// 腾讯云频率限制：默认接口请求频率限制 20 次/秒
 // 参数说明：
 // concurrency 一次并发验证的个数（值应大于 0）
 // data 的 key 为身份证，调用者应保证 key 同 value 的一致性
@@ -69,6 +70,7 @@ func (t *Face) BatchVerifyIdcardAndBankcard(concurrency int, data map[string]*Id
 }
 
 // VerifyIdcardAndBankcard 验证身份证号码和银行卡是否匹配
+// 腾讯云频率限制：默认接口请求频率限制 20 次/秒
 // 返回值：一致性返回 true，否则返回 false，出错返回 error；第二个返回值为验证结果描述
 // 参数 idcard 和 bankcard 可含有空格
 func (t *Face) VerifyIdcardAndBankcard(idcard, name, bankcard string) (bool, string, error) {

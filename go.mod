@@ -4,6 +4,8 @@ go 1.20
 
 require (
 	github.com/gen2brain/go-fitz v1.22.2
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.1041
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/faceid v1.0.1041
 	golang.org/x/crypto v0.23.0
 	golang.org/x/text v0.15.0
 	gorm.io/driver/sqlite v1.5.6

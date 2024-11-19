@@ -15,29 +15,29 @@ func TestBatchVerifyIdcardAndBankcard(t *testing.T) {
 
 	data := map[string]*IdcardBankcardTuple{
 		"123456789012345678": {
-			Idcard: "123456789012345678",
-			Name:   "张三",
+			Idcard:   "123456789012345678",
+			Name:     "张三",
 			Bankcard: "12345678901234567890",
 		},
 		"123456789012345679": {
-			Idcard: "123456789012345679",
-			Name:   "李四",
+			Idcard:   "123456789012345679",
+			Name:     "李四",
 			Bankcard: "12345678901234567890",
 		},
 		"123456789012345680": {
-			Idcard: "123456789012345680",
-			Name:   "王五",
+			Idcard:   "123456789012345680",
+			Name:     "王五",
 			Bankcard: "12345678901234567890",
 		},
 		"123456789012345681": {
-			Idcard: "123456789012345681",
-			Name:   "赵六",
+			Idcard:   "123456789012345681",
+			Name:     "赵六",
 			Bankcard: "12345678901234567890",
 		},
 	}
 
 	txCloud := NewFace(secretId, secretKey)
-	consistent, inconsistent, fail := txCloud.BatchVerifyIdcardAndBankcard(2, data)
+	consistent, inconsistent, fail := txCloud.BatchVerifyIdcardAndBankcard(2, len(data), data)
 	t.Logf("consistent:%d, inconsistent:%d, fail:%d\n", consistent, inconsistent, fail)
 	for k, v := range data {
 		t.Logf("%s: %+v\n", k, v)
@@ -69,7 +69,7 @@ func TestVerifyIdcardAndBankcard(t *testing.T) {
 			t.Logf("%s\n", err.Error())
 		}
 	} else if !ok {
-		t.Errorf("%s",desc)
+		t.Errorf("%s", desc)
 	} else {
 		t.Log(ok, desc)
 	}

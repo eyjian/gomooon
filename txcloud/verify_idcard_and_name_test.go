@@ -34,7 +34,7 @@ func TestBatchVerifyIdcardAndName(t *testing.T) {
 	}
 
 	txCloud := NewFace(secretId, secretKey)
-	consistent, inconsistent, fail := txCloud.BatchVerifyIdcardAndName(2, data)
+	consistent, inconsistent, fail := txCloud.BatchVerifyIdcardAndName(2, len(data), data)
 	t.Logf("consistent:%d, inconsistent:%d, fail:%d\n", consistent, inconsistent, fail)
 	for k, v := range data {
 		t.Logf("%s: %+v\n", k, v)
@@ -61,7 +61,7 @@ func TestVerifyIdcardAndName(t *testing.T) {
 			t.Logf("%s\n", err.Error())
 		}
 	} else if !ok {
-		t.Errorf("%s",desc)
+		t.Errorf("%s", desc)
 	} else {
 		t.Log(ok, desc)
 	}

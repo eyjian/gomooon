@@ -17,27 +17,27 @@ func TestBatchVerifyIdcardAndPhone(t *testing.T) {
 		"123456789012345678": {
 			Idcard: "123456789012345678",
 			Name:   "张三",
-			Phone: "13800138000",
+			Phone:  "13800138000",
 		},
 		"123456789012345679": {
 			Idcard: "123456789012345679",
 			Name:   "李四",
-			Phone: "12345678901234567890",
+			Phone:  "12345678901234567890",
 		},
 		"123456789012345680": {
 			Idcard: "123456789012345680",
 			Name:   "王五",
-			Phone: "12345678901234567890",
+			Phone:  "12345678901234567890",
 		},
 		"123456789012345681": {
 			Idcard: "123456789012345681",
 			Name:   "赵六",
-			Phone: "12345678901234567890",
+			Phone:  "12345678901234567890",
 		},
 	}
 
 	txCloud := NewFace(secretId, secretKey)
-	consistent, inconsistent, fail := txCloud.BatchVerifyIdcardAndPhone(2, data)
+	consistent, inconsistent, fail := txCloud.BatchVerifyIdcardAndPhone(2, len(data), data)
 	t.Logf("consistent:%d, inconsistent:%d, fail:%d\n", consistent, inconsistent, fail)
 	for k, v := range data {
 		t.Logf("%s: %+v\n", k, v)
@@ -69,7 +69,7 @@ func TestVerifyIdcardAndPhone(t *testing.T) {
 			t.Logf("%s\n", err.Error())
 		}
 	} else if !ok {
-		t.Errorf("%s",desc)
+		t.Errorf("%s", desc)
 	} else {
 		t.Log(ok, desc)
 	}

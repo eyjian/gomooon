@@ -15,27 +15,31 @@ import (
 )
 
 // IdcardBankcardTuple 验证结果
+// 过频错误示例：Code=RequestLimitExceeded, Message=您当前每秒请求 `103` 次，超过了每秒频率上限 `100`，请稍后重试。
 type IdcardBankcardTuple struct {
-	Idcard string
-	Name string
-	Bankcard string
-	Consistent bool // 是否一致
-	ErrDesc string // 不一致原因描述
-	Err error
+	Idcard     string
+	Name       string
+	Bankcard   string
+	Consistent bool   // 是否一致
+	ErrDesc    string // 不一致原因描述
+	Err        error  // if txcloudErr, ok := err.(*errors.TencentCloudSDKError); ok {
 }
 
 // BatchVerifyIdcardAndBankcard 批量验证身份证号码和银行卡是否匹配
 // 腾讯云频率限制：默认接口请求频率限制 20 次/秒
 // 参数说明：
 // concurrency 一次并发验证的个数（值应大于 0）
-// data 的 key 为身份证，调用者应保证 key 同 value 的一致性
+// failCount 接口调用失败数达到时中止执行，为 0 表示遇到一个错误即中止执行
+// data 的 key 为身份证，调用者应保证 key 同 value 的一致性，传入的 Err 应为 nil，ErrDesc 为空，Consistent 为 false
 // 因为 data 内的对象不会变，只是对象的内容变化，因此实现不需要加锁
-func (t *Face) BatchVerifyIdcardAndBankcard(concurrency int, data map[string]*IdcardBankcardTuple) (int, int, int) {
+// 遇到腾讯云接口调用失败数超过 failCount 时会中止执行，并在第三个返回值记录错误个数，此时对 data 的处理时不完整的，
+// 可通过 data 的 Err 为 nil 和 ErrDesc 为空来判断，并且对应的 Consistent 必为 false
+func (t *Face) BatchVerifyIdcardAndBankcard(concurrency, failCount int, data map[string]*IdcardBankcardTuple) (int, int, int) {
 	var wg sync.WaitGroup
 
-	consistent := int32(0) // 一致的个数
+	consistent := int32(0)   // 一致的个数
 	inconsistent := int32(0) // 不一致的个数
-	fail := int32(0) // 出错的个数
+	fail := int32(0)         // 接口调用失败的个数
 	semaphore := make(chan struct{}, concurrency)
 	for _, v := range data {
 		wg.Add(1)
@@ -63,6 +67,11 @@ func (t *Face) BatchVerifyIdcardAndBankcard(concurrency int, data map[string]*Id
 				atomic.AddInt32(&inconsistent, 1)
 			}
 		}(v)
+
+		// 如果出错，直接退出循环，特别是过频错误时及时释放额度
+		if atomic.LoadInt32(&fail) > int32(failCount) {
+			break
+		}
 	}
 
 	wg.Wait()

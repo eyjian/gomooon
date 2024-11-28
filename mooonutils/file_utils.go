@@ -56,6 +56,64 @@ func Md5File(filePath string) (string, error) {
 	return hashString, nil
 }
 
+// DeleteFile 删除文件
+func DeleteFile(path string) error {
+	err := os.Remove(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil // 如果文件不存在，不返回错误
+		}
+		return err
+	}
+	return nil
+}
+
+// CopyFile 复制文件
+// 参数：src：源文件路径，dst：目标文件路径，overwrite：是否覆盖目标文件，默认是 true
+func CopyFile(src, dst string, overwrite bool) error {
+	// 打开源文件
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	// 获取源文件的属性
+	srcInfo, err := srcFile.Stat()
+	if err != nil {
+		return err
+	}
+
+	// 根据 overwrite 参数设置标志
+	flag := os.O_WRONLY | os.O_CREATE
+	if overwrite {
+		flag = flag | os.O_TRUNC
+	} else {
+		flag = flag | os.O_EXCL
+	}
+
+	// 创建目标文件，使用源文件的权限
+	dstFile, err := os.OpenFile(dst, flag, srcInfo.Mode())
+	if err != nil {
+		return err
+	}
+	defer dstFile.Close()
+
+	// 复制文件内容
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return err
+	}
+
+	// 复制源文件的修改时间和访问时间
+	err = os.Chtimes(dst, srcInfo.ModTime(), srcInfo.ModTime())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Unzip 解压 zip 文件
 // 返回值：解压后的文件（含目录部分，如果是当前目录“.”则仅文件名）列表
 // options[0]：是否覆盖解压后的同名文件，默认是 true

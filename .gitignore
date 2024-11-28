@@ -12,4 +12,5 @@ mooonwepay/*.gz
 mooonutils/Test_20231023.txt
 mooonutils/测试_文本文档_20241023.txt
 mooonutils/测试_20241023/aaa/新建 文本文档_20241023.txt
+mooonutils/str_utils.copy
 *.log

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 )
 
 // GetCurrentTimestamp 获取指定时区的当前时间戳
@@ -37,6 +38,7 @@ func IsValidTime(s string) bool {
 }
 
 // NormalizeDateTimeString 将中文日期或时间字符串规整为“YYYY-MM-DD hh:mm:ss”格式
+// 返回的不一定就是有效的时间格式，应当在调用 IsValidTime 函数时进行进一步验证
 // withHms 参数 str 的值是否包含了"时、分、秒"，当值为 true 时，如果 str 本身不含时分秒，则结果会自动添加上
 // str 日期或者时间字符串，格式可为：
 // 1）YYYY年MM月DD日 hh时mm分ss秒
@@ -46,37 +48,53 @@ func IsValidTime(s string) bool {
 // 5）YYYY-MM-DD
 // 6）YYYY/MM/DD hh:mm:ss
 // 7）YYYY/MM/DD
+// 8）YYYYMMDD
 func NormalizeDateTimeString(str string, withHms bool) string {
 	var builder strings.Builder
-	runes := []rune(str)     // 将字符串转换为 rune 切片
-	builder.Grow(len(runes)) // 预分配足够的空间以提高性能
+	runes := []rune(str)          // 将字符串转换为 rune 切片
+	builder.Grow(len(runes) + 10) // 预分配足够的空间以提高性能
 
-	for i, r := range runes {
-		switch r {
-		case '年', '月':
-			builder.WriteString("-")
-		case '日':
-			// 如果"日"后面没有空格，我们添加一个
-			if i < len(runes)-1 && runes[i+1] != ' ' {
-				builder.WriteString(" ")
+	if len(runes) == 8 && allDigits(runes) {
+		// YYYYMMDD
+		builder.WriteString(string(runes[:4]) + "-" + string(runes[4:6]) + "-" + string(runes[6:]))
+	} else {
+		for i, r := range runes {
+			switch r {
+			case '年', '月':
+				builder.WriteString("-")
+			case '日':
+				// 如果"日"后面没有空格，我们添加一个
+				if i < len(runes)-1 && runes[i+1] != ' ' {
+					builder.WriteString(" ")
+				}
+			case '时', '分':
+				if withHms {
+					builder.WriteRune(':')
+				}
+			case '秒':
+				if withHms {
+					builder.WriteString("")
+				}
+			default:
+				builder.WriteRune(r)
 			}
-		case '时', '分':
-			if withHms {
-				builder.WriteRune(':')
-			}
-		case '秒':
-			if withHms {
-				builder.WriteString("")
-			}
-		default:
-			builder.WriteRune(r)
 		}
 	}
+
 	if withHms && builder.Len() == len("YYYY-MM-DD") {
 		builder.WriteString(" 00:00:00")
 	}
-
 	return strings.ReplaceAll(builder.String(), "/", "-")
+}
+
+// allDigits 检查 rune 切片是否全部为数字
+func allDigits(runes []rune) bool {
+	for _, r := range runes {
+		if !unicode.IsDigit(r) {
+			return false
+		}
+	}
+	return true
 }
 
 // String2Time 将日期字符串转换为时间对象

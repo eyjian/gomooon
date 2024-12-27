@@ -27,6 +27,35 @@ func TestGetCurrentTimestampString(t *testing.T) {
 	}
 }
 
+// go test -v -run="TestIsValidTime"
+func TestIsValidTime(t *testing.T) {
+	testCases := []struct {
+		dateStr      string
+		expectedTrue bool
+	}{
+		{"2020-01-02", true},
+		{"2021年01月02日", true},
+		{"2022-01-02 12:03:04", true},
+		{"2023年01月02日 12时03分04秒", true},
+		{"2024年01月02日12时03分04秒", true},
+		{"2025/01/02 12:03:04", true},
+		{"2026/01/02", true},
+		{"20260102", true},
+		{"20260100", false},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.dateStr, func(t *testing.T) {
+			dateStr := NormalizeDateTimeString(tc.dateStr, true)
+			is := IsValidTime(dateStr)
+			if is != tc.expectedTrue {
+				t.Errorf("CleanDateTimeString(%s) => %s; want %v", tc.dateStr, dateStr, tc.expectedTrue)
+			} else {
+				t.Logf("CleanDateTimeString(%s) => %s; want %v", tc.dateStr, dateStr, tc.expectedTrue)
+			}
+		})
+	}
+}
+
 // go test -v -run="TestNormalizeDateTimeString"
 func TestNormalizeDateTimeString(t *testing.T) {
 	testCases := []struct {
@@ -40,6 +69,8 @@ func TestNormalizeDateTimeString(t *testing.T) {
 		{"2024年01月02日12时03分04秒", "2024-01-02 12:03:04"},
 		{"2025/01/02 12:03:04", "2025-01-02 12:03:04"},
 		{"2026/01/02", "2026-01-02 00:00:00"},
+		{"20260102", "2026-01-02 00:00:00"},
+		{"20260100", "2026-01-00 00:00:00"},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.dateStr, func(t *testing.T) {

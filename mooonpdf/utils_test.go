@@ -17,3 +17,13 @@ func TestIsPdfFile(t *testing.T) {
 		t.Log("test.txt is not pdf file")
 	}
 }
+
+// go test -v -run="TestGetPdfPageCount"
+func TestGetPdfPageCount(t *testing.T) {
+	count, err := GetPdfPageCount("test.pdf")
+	if err != nil {
+		t.Error(err)
+	} else {
+		t.Log(count)
+	}
+}

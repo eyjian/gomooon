@@ -27,3 +27,15 @@ func IsPdfFile(filepath string) bool {
 		return true
 	}
 }
+
+// GetPdfPageCount 获取 pdf 文件页数
+func GetPdfPageCount(filepath string) (int, error) {
+	doc, err := fitz.New(filepath)
+	if err != nil {
+		return 0, err
+	} else {
+		pageCount := doc.NumPage()
+		doc.Close()
+		return pageCount, nil
+	}
+}

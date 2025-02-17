@@ -250,23 +250,34 @@ func IsValidBirthdate(date string) bool {
 
 // TruncateUtf8String 截取 UTF8 字符串，使其字数（不是字节数，一个数字、字母和汉字都分别计 1）不超过 maxCharCount
 func TruncateUtf8String(utf8Str string, maxCharCount int) string {
-	if utf8.RuneCountInString(utf8Str) <= maxCharCount {
-		return utf8Str
+	if maxCharCount <= 0 {
+		return ""
 	}
-
-	var truncated string
-	var charCount int
-	for len(utf8Str) > 0 {
-		r, size := utf8.DecodeRuneInString(utf8Str)
-		if charCount+1 > maxCharCount {
-			break
-		}
-		truncated += string(r)
-		charCount++
-		utf8Str = utf8Str[size:]
+	runes := []rune(utf8Str)
+	if len(runes) <= maxCharCount {
+		return utf8Str // 字符串长度小于等于n，直接返回原字符串
 	}
-	return truncated
+	return string(runes[:maxCharCount])
 }
+
+//func TruncateUtf8String(utf8Str string, maxCharCount int) string { 
+//	if utf8.RuneCountInString(utf8Str) <= maxCharCount {
+//		return utf8Str
+//	}
+//
+//	var truncated string
+//	var charCount int
+//	for len(utf8Str) > 0 {
+//		r, size := utf8.DecodeRuneInString(utf8Str)
+//		if charCount+1 > maxCharCount {
+//			break
+//		}
+//		truncated += string(r)
+//		charCount++
+//		utf8Str = utf8Str[size:]
+//	}
+//	return truncated
+//}
 
 // CountUtf8Characters 计算字数，一个数字、字母和汉字都分别计 1
 func CountUtf8Characters(utf8Str string) int {

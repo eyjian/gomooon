@@ -235,3 +235,30 @@ func TestTruncateUtf8String(t *testing.T) {
         t.Logf("%s truncated to 2: %s\n", s3, s30)
     }
 }
+
+// go test -v -run="TestIsExecutableFile"
+func TestIsExecutableFile(t *testing.T) {
+    filepath := "/usr/bin/ls"
+    is, err := IsExecutableFile(filepath)
+    if err != nil {
+        t.Errorf("IsExecutableFile error: %s\n", err.Error())
+    } else {
+        if is {
+            t.Logf("%s is executable\n", filepath)
+        } else {
+            t.Errorf("%s is unexecutable\n", filepath)
+        }
+    }
+    
+    filepath = "/etc/profile"
+    is, err = IsExecutableFile(filepath)
+    if err != nil {
+        t.Errorf("IsExecutableFile error: %s\n", err.Error())
+    } else {
+        if is {
+            t.Errorf("%s is executable\n", filepath)
+        } else {
+            t.Logf("%s is unexecutable\n", filepath)
+        }
+    }
+}

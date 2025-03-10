@@ -109,3 +109,26 @@ func LuhnCheck(str string) bool {
 	}
 	return sum%10 == 0
 }
+
+// IsChineseName 判断字符串是否为合法的中文姓名
+func IsChineseName(str string, maxChineseCharacters int) bool {
+    chineseCharacters := utf8.RuneCountInString(str)
+    if chineseCharacters < 2 || chineseCharacters > maxChineseCharacters {
+        return false
+    }
+
+    // 汉字+间隔符校验（unicode.Han 覆盖 CJK 统一汉字）
+    validChars := map[rune]bool{
+        '\u00B7': true, // Unicode 中间点符号
+    }
+    for _, r := range str {
+        if !unicode.Is(unicode.Han, r) && !validChars[r] {
+            return false
+        }
+    }
+
+    // 正则表达式增强校验（少数民族姓名中间可能含点）
+    pattern := `^[\p{Han}·]+$` // 反引号内直接写字符
+    reg := regexp.MustCompile(pattern) // 包含中间点符号
+    return reg.MatchString(str)
+}

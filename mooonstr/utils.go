@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+    "unicode"
+    "unicode/utf8"
 )
 
 // CamelCase 驼峰命名法

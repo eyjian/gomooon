@@ -212,3 +212,26 @@ func TestLuhnCheck(t *testing.T) {
 		t.Errorf("`%s` error\n", number)
 	}
 }
+
+// go test -v -run="TestFormatCents"
+func TestFormatCents(t *testing.T) {
+	// 编写测试用例
+	tests := []struct {
+		cents    int
+		expected string
+	}{
+		{0, "0"},
+		{1, "0.01"},
+		{10, "0.1"},
+		{100, "1"},
+		{1000, "10"},
+	}
+
+	// 遍历测试用例并执行测试
+	for _, tt := range tests {
+		actual := FormatCents(uint32(tt.cents))
+		if actual != tt.expected {
+			t.Errorf("FormatCents(%d) = %s, expected %s", tt.cents, actual, tt.expected)
+		}
+	}
+}

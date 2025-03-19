@@ -138,3 +138,37 @@ func String2Time(dateStr string) (time.Time, error) {
 	// 如果所有格式都无法解析，返回错误
 	return time.Time{}, fmt.Errorf("unsupported date format")
 }
+
+// GetExpirationTime 取得过期时间
+// startTime 起始时间
+// days 从 startTime 开始的有效天数，截止日期那天的最后一秒
+// 返回值：截止日期那天的最后一秒
+func GetExpirationTime(startTime time.Time, days int) time.Time {
+	expirationTime := startTime.AddDate(0, 0, days)
+	return time.Date(expirationTime.Year(), expirationTime.Month(), expirationTime.Day(), 23, 59, 59, 0, expirationTime.Location())
+}
+
+// GetExpirationDays 计算当前时间到截止时间间的天数
+// startTime 起始时间
+// now 当前时间
+// days 从 startTime 开始的有效天数，截止日期那天的最后一秒
+// 返回值：剩余的天数，0 表示已过期，负数表示已过期的天数
+func GetExpirationDays(startTime, now time.Time, days int) int {
+	expirationTime := GetExpirationTime(startTime, days)
+
+	// 对齐到自然日零点（统一时区）
+	expDate := time.Date(
+		expirationTime.Year(), expirationTime.Month(), expirationTime.Day(),
+		0, 0, 0, 0, expirationTime.Location(),
+	)
+	nowDate := time.Date(
+		now.Year(), now.Month(), now.Day(),
+		0, 0, 0, 0, expirationTime.Location(), // 统一使用到期时间的时区
+	)
+
+	// 计算天数差
+	daysDiff := int(expDate.Sub(nowDate).Hours() / 24)
+
+	// 处理已过期的情况（返回0或负数）
+	return daysDiff
+}

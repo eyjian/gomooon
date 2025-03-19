@@ -140,3 +140,52 @@ func TestString2Time_InvalidFormat(t *testing.T) {
 		t.Errorf("String2Time(%s) did not return an error; want an error", dateStr)
 	}
 }
+
+// go test -v -run="TestGetExpirationTime"
+func TestGetExpirationTime(t *testing.T) {
+	days := 30
+
+	startTime := time.Now()
+	expirationTime := GetExpirationTime(startTime, days)
+	t.Logf("startTime: %v, days: %d, expirationTime: %v", startTime, days, expirationTime)
+	if expirationTime.Before(time.Now()) {
+		t.Errorf("expirationTime should be greater than startTime")
+	}
+
+	startTime = time.Now().AddDate(0, 0, -1)
+	expirationTime = GetExpirationTime(startTime, days)
+	t.Logf("startTime: %v, days: %d, expirationTime: %v", startTime, days, expirationTime)
+	if expirationTime.Before(time.Now()) {
+		t.Errorf("expirationTime should be greater than startTime")
+	}
+}
+
+// go test -v -run="TestGetExpirationDays"
+func TestGetExpirationDays(t *testing.T) {
+	// 当前时间
+	now := time.Now()
+
+	startTime := time.Now()
+	days := 30
+	expirationDays := GetExpirationDays(startTime, now, days)
+	t.Logf("startTime: %v, now: %v, days: %d, expirationDays: %d", startTime, now, days, expirationDays)
+	if expirationDays < 0 {
+		t.Errorf("expirationDays should be greater than 0")
+	}
+
+	// 从昨日开始计算
+	startTime = time.Now().AddDate(0, 0, -1)
+	expirationDays = GetExpirationDays(startTime, now, days)
+	t.Logf("startTime: %v, now: %v, days: %d, expirationDays: %d", startTime, now, days, expirationDays)
+	if expirationDays != 30 {
+		t.Errorf("expirationDays should be 30")
+	}
+
+	// 从前日开始计算
+	startTime = time.Now().AddDate(0, 0, -2)
+	expirationDays = GetExpirationDays(startTime, now, days)
+	t.Logf("startTime: %v, now: %v, days: %d, expirationDays: %d", startTime, now, days, expirationDays)
+	if expirationDays != 30 {
+		t.Errorf("expirationDays should be 30")
+	}
+}

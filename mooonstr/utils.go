@@ -154,3 +154,28 @@ func FormatCents(cents uint32) string {
 		return fmt.Sprintf("%d", yuan) // 整数格式：12
 	}
 }
+
+// IsAllChinese 判断字符串是否全由中文组成（包含常用CJK汉字）
+// 空字符串返回false
+func IsAllChinese(str string) bool {
+	if len(str) == 0 {
+		return false
+	}
+	for _, r := range str {
+		if !unicode.Is(unicode.Han, r) && !unicode.IsPunct(r) {
+			return false
+		}
+	}
+	return true
+}
+
+// ContainsChinese 判断字符串中是否包含中文字符，包括中文标点符号
+// 空字符串返回false
+func ContainsChinese(str string) bool {
+	for _, r := range str {
+		if unicode.Is(unicode.Han, r) || unicode.IsPunct(r) {
+			return true
+		}
+	}
+	return false
+}

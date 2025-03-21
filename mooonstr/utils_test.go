@@ -235,3 +235,80 @@ func TestFormatCents(t *testing.T) {
 		}
 	}
 }
+
+// go test -v -run="TestIsAllChinese"
+// TestIsAllChinese 测试是否都是中文
+func TestIsAllChinese(t *testing.T) {
+	// 编写测试用例
+	tests := []struct {
+		str      string
+		expected bool
+	}{
+		{"", false},
+		{"abc", false},
+		{"abc123", false},
+		{"123abc", false},
+		{"123abc456", false},
+		{"abc123456", false},
+		{"123456", false},
+		{"一二三", true},
+		{"一，二三", true},
+		{"一二三四五六", true},
+		{"一二三四五六七八九", true},
+		{"一二三四五六七八九十", true},
+		{"一二三四五六七八九十123", false},
+		{"123一二三四五六七八九十", false},
+		{"123一二三四五六七八九十123", false},
+		{"123一二三四五六七八九十", false},
+		{"123一二三四五六七八九十123", false},
+		{"123一二三四五六七八九十", false},
+		{"123一二三四五六七八九十123", false},
+		{"123一二三四五六七八九十", false},
+	}
+
+	// 遍历测试用例并执行测试
+	for _, tt := range tests {
+		actual := IsAllChinese(tt.str)
+		if actual != tt.expected {
+			t.Errorf("IsAllChinese(%q) = %v, expected %v", tt.str, actual, tt.expected)
+		}
+	}
+}
+
+// go test -v -run="TestContainsChinese"
+func TestContainsChinese(t *testing.T) {
+	// 编写测试用例
+	tests := []struct {
+		str      string
+		expected bool
+	}{
+		{"", false},
+		{"abc", false},
+		{"abc123", false},
+		{"123abc", false},
+		{"123abc456", false},
+		{"abc123456", false},
+		{"123456", false},
+		{"123456，", true},
+		{"一二三", true},
+		{"一二三四五六", true},
+		{"一二三四五六七八九", true},
+		{"一二三四五六七八九十", true},
+		{"一二三四五六七八九十123", true},
+		{"123一二三四五六七八九十", true},
+		{"123一二三四五六七八九十123", true},
+		{"123一二三四五六七八九十", true},
+		{"123一二三四五六七八九十123", true},
+		{"123一二三四五六七八九十", true},
+		{"123一二三四五六七八九十123", true},
+		{"123一二三四五六七八九十", true},
+	}
+
+	// 遍历测试用
+	for _, tt := range tests {
+		actual := ContainsChinese(tt.str)
+		if actual != tt.expected {
+			t.Errorf("ContainsChinese(%q) = %v, expected %v", tt.str, actual, tt.expected)
+		}
+	}
+}

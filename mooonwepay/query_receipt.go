@@ -43,7 +43,7 @@ func QueryReceipt(client *core.Client, req *QueryReceiptRequest) (*QueryReceiptR
 	// 发送 GET 请求
 	apiResult, err := client.Get(req.ctx, url)
 	if err != nil {
-		return nil, fmt.Errorf("QueryReceipt failed to apply electronic receipt: %w", err)
+		return nil, fmt.Errorf("QueryReceipt failed to query electronic receipt: %w", err)
 	}
 
 	// 读取响应体内容

@@ -10,6 +10,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.1041
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/faceid v1.0.1041
+	github.com/wechatpay-apiv3/wechatpay-go v0.2.20
 	golang.org/x/crypto v0.33.0
 	golang.org/x/text v0.22.0
 	gorm.io/driver/sqlite v1.5.6

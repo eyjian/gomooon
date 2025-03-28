@@ -13,7 +13,7 @@ import (
 
 // QueryReceiptRequest 查询电子回单请求结构体
 type QueryReceiptRequest struct {
-	ctx         context.Context
+	Ctx         context.Context
 	OutBillNo   string `json:"out_bill_no"`   // 商户单号
 	WepayBillNo string `json:"wepay_bill_no"` // 微信单号
 }
@@ -41,7 +41,7 @@ func QueryReceipt(client *core.Client, req *QueryReceiptRequest) (*QueryReceiptR
 	}
 
 	// 发送 GET 请求
-	apiResult, err := client.Get(req.ctx, url)
+	apiResult, err := client.Get(req.Ctx, url)
 	if err != nil {
 		return nil, fmt.Errorf("QueryReceipt failed to query electronic receipt: %w", err)
 	}

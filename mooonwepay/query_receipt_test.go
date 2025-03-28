@@ -4,11 +4,12 @@ package mooonwepay
 
 import (
 	"context"
+	"os"
+	"testing"
+
 	"github.com/wechatpay-apiv3/wechatpay-go/core"
 	"github.com/wechatpay-apiv3/wechatpay-go/core/option"
 	"github.com/wechatpay-apiv3/wechatpay-go/utils"
-	"os"
-	"testing"
 )
 
 // go test -v -run="TestQueryReceipt" -args mchid serial_no mch_api_v3_key private_key wepay_bill_no
@@ -43,7 +44,7 @@ func TestQueryReceipt(t *testing.T) {
 
 	// 调用查询电子回单的函数
 	resp, err := QueryReceipt(client, &QueryReceiptRequest{
-		ctx:         context.Background(),
+		Ctx:         context.Background(),
 		OutBillNo:   "",
 		WepayBillNo: wepayBillNo,
 	})

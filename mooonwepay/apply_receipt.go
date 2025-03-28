@@ -13,7 +13,7 @@ import (
 
 // ApplyReceiptRequest 电子回单申请请求结构体
 type ApplyReceiptRequest struct {
-	ctx         context.Context
+	Ctx         context.Context
 	OutBillNo   string `json:"out_bill_no"`   // 商户单号
 	WepayBillNo string `json:"wepay_bill_no"` // 微信单号
 }
@@ -51,7 +51,7 @@ func ApplyReceipt(client *core.Client, req *ApplyReceiptRequest) (*ApplyReceiptR
 	}
 
 	// 发送 POST 请求
-	apiResult, err := client.Post(req.ctx, url, bodyBytes)
+	apiResult, err := client.Post(req.Ctx, url, bodyBytes)
 	if err != nil {
 		return nil, fmt.Errorf("ApplyReceipt failed to apply electronic receipt: %w", err)
 	}

@@ -17,7 +17,7 @@ import (
 
 // DownloadReceiptRequest 电子回单下载请求结构体
 type DownloadReceiptRequest struct {
-	ctx           context.Context
+	Ctx           context.Context
 	HashType      string `json:"hash_type"` // 哈希类型（SM3、SHA256），取值需同 QueryReceipt 返回的一致，如果未指定则不校验文件的哈希值
 	HashValue     string `json:"hash_value"`
 	DownloadUrl   string `json:"download_url"`    // 下载地址
@@ -34,7 +34,7 @@ type DownloadReceiptResponse struct {
 // 官方文档：https://pay.weixin.qq.com/doc/v3/merchant/4013866774
 func DownloadReceipt(client *core.Client, req *DownloadReceiptRequest) (*DownloadReceiptResponse, error) {
 	// 发送 GET 请求
-	apiResult, err := client.Get(req.ctx, req.DownloadUrl)
+	apiResult, err := client.Get(req.Ctx, req.DownloadUrl)
 	if err != nil {
 		return nil, fmt.Errorf("DownloadReceipt failed to download electronic receipt: %w", err)
 	}

@@ -49,7 +49,7 @@ func TestDownloadReceipt(t *testing.T) {
 
 	// 构建下载电子回单的请求
 	req := &DownloadReceiptRequest{
-		ctx:           context.Background(),
+		Ctx:           context.Background(),
 		DownloadUrl:   downloadUrl,
 		LocalFilePath: localFilePath,
 		HashType:      "SM3", // 或 "SHA256"

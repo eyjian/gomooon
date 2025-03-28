@@ -4,11 +4,12 @@ package mooonwepay
 
 import (
 	"context"
+	"os"
+	"testing"
+
 	"github.com/wechatpay-apiv3/wechatpay-go/core"
 	"github.com/wechatpay-apiv3/wechatpay-go/core/option"
 	"github.com/wechatpay-apiv3/wechatpay-go/utils"
-	"os"
-	"testing"
 )
 
 // go test -v -run="TestApplyReceipt" -args mchid serial_no mch_api_v3_key private_key wepay_bill_no
@@ -43,7 +44,7 @@ func TestApplyReceipt(t *testing.T) {
 
 	// 调用申请电子回单的函数
 	resp, err := ApplyReceipt(client, &ApplyReceiptRequest{
-		ctx:         context.Background(),
+		Ctx:         context.Background(),
 		OutBillNo:   "",
 		WepayBillNo: wepayBillNo,
 	})

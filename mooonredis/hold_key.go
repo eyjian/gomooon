@@ -4,8 +4,9 @@ package mooonredis
 
 import (
 	"context"
-	"github.com/go-redis/redis/v8"
 	"time"
+
+	"github.com/go-redis/redis/v8"
 )
 
 var rentScript = redis.NewScript(`
@@ -65,6 +66,13 @@ redis.call("DEL", key)
 return 1 -- key存在，释放成功
 `)
 
+type HoldKey struct {
+	RedisClient redis.UniversalClient
+	Key         string        // 定时器独一无二的 key
+	Value       string        // 建议使用 POD_IP
+	Expiration  time.Duration // 设置至少 1 分钟的值
+}
+
 // RentKey 用于实现分布式锁
 // 返回值：
 // 1. bool: 是否成功
@@ -74,14 +82,14 @@ return 1 -- key存在，释放成功
 // 2. 如果 key 存在，但 value 与当前值相同，则返回 true
 // 3. 如果 key 存在，但 value 与当前值不同，则返回 false
 // 4. 如果设置 key 时发生错误，则返回 false, err
-func RentKey(redisClient redis.UniversalClient, ctx context.Context, key, value string, expiration time.Duration) (bool, error) {
-	keys := []string{key}
+func RentKey(ctx context.Context, hk *HoldKey) (bool, error) {
+	keys := []string{hk.Key}
 	args := []interface{}{
-		value,                     // value
-		expiration.Milliseconds(), // ttl_ms
+		hk.Value,      // value
+		hk.Expiration, // ttl
 	}
 
-	res, err := rentScript.Run(ctx, redisClient, keys, args...).Int()
+	res, err := rentScript.Run(ctx, hk.RedisClient, keys, args...).Int()
 	if err != nil {
 		return false, err // 错误时返回 false, err
 	}
@@ -107,14 +115,14 @@ func RentKey(redisClient redis.UniversalClient, ctx context.Context, key, value 
 // 说明：
 // 1. 续期成功返回 true, nil；续期失败返回 false, nil
 // 2. 如果续期时发生错误，则返回 false, err
-func RenewKey(redisClient redis.UniversalClient, ctx context.Context, key, value string, expiration time.Duration) (bool, error) {
-	keys := []string{key}
+func RenewKey(ctx context.Context, hk *HoldKey) (bool, error) {
+	keys := []string{hk.Key}
 	args := []interface{}{
-		value,
-		expiration.Milliseconds(), // 转换为毫秒[1](@ref)
+		hk.Value,
+		hk.Expiration,
 	}
 
-	res, err := renewScript.Run(ctx, redisClient, keys, args...).Int()
+	res, err := renewScript.Run(ctx, hk.RedisClient, keys, args...).Int()
 	if err != nil {
 		return false, err // 网络错误或脚本执行错误
 	}
@@ -129,11 +137,11 @@ func RenewKey(redisClient redis.UniversalClient, ctx context.Context, key, value
 // 说明：
 // 1. 仅当 key 存在且 value 匹配时才删除锁，避免误删其他客户端的锁
 // 2. key 不存在时视为已释放，返回 true
-func ReleaseKey(redisClient redis.UniversalClient, ctx context.Context, key, value string) (bool, error) {
-	keys := []string{key}
-	args := []interface{}{value}
+func ReleaseKey(ctx context.Context, hk *HoldKey) (bool, error) {
+	keys := []string{hk.Key}
+	args := []interface{}{hk.Value}
 
-	res, err := releaseScript.Run(ctx, redisClient, keys, args...).Int()
+	res, err := releaseScript.Run(ctx, hk.RedisClient, keys, args...).Int()
 	if err != nil {
 		return false, err // 网络或脚本错误
 	}

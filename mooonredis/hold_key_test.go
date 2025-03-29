@@ -10,11 +10,12 @@ package mooonredis
 import (
 	"context"
 	"errors"
-	"github.com/go-redis/redis/v8"
-	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/go-redis/redis/v8"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -38,18 +39,29 @@ func TestRentKey_Basic(t *testing.T) {
 	rdb := createRedisClient()
 	defer rdb.Close()
 
+	hk := &HoldKey{
+		RedisClient: rdb,
+		Key:         "test_key",
+		Value:       "test_value",
+		Expiration:  time.Minute,
+	}
+
 	// 用例1：首次获取锁
-	ok, err := RentKey(rdb, ctx, "lock1", "v1", time.Minute)
+	ok, err := RentKey(ctx, hk)
 	assert.True(t, ok)
 	assert.Nil(t, err)
 
 	// 用例2：重复获取相同值的锁
-	ok, _ = RentKey(rdb, ctx, "lock1", "v1", time.Minute)
-	assert.True(t, ok) // 值匹配直接返回成功
+	ok, err = RentKey(ctx, hk)
+	assert.True(t, ok)
+	assert.Nil(t, err)
 
 	// 用例3：值冲突的获取
-	ok, _ = RentKey(rdb, ctx, "lock1", "v2", time.Minute)
+	// 这里需要修改 hk 的值以模拟值冲突
+	hk.Value = "different_value"
+	ok, err = RentKey(ctx, hk)
 	assert.False(t, ok)
+	assert.Nil(t, err)
 }
 
 // TestRentKey_Expiration 过期场景测试
@@ -58,22 +70,26 @@ func TestRentKey_Expiration(t *testing.T) {
 	rdb := createRedisClient()
 	defer rdb.Close()
 
+	hk := &HoldKey{
+		RedisClient: rdb,
+		Key:         "test_key",
+		Value:       "test_value",
+		Expiration:  time.Minute,
+	}
+
 	key := "expired_lock"
 	// 设置键并主动触发过期检查
 	rdb.Set(ctx, key, "v1", 1*time.Millisecond)
-	//rdb.Exists(ctx, key) // 第一次触发惰性删除
 	time.Sleep(10 * time.Millisecond)
-	//rdb.Exists(ctx, key) // 第二次确认删除
 
 	// 正确判断键不存在的方式（需引入 errors 包）
 	_, err := rdb.Get(ctx, key).Result()
 	assert.True(t, errors.Is(err, redis.Nil)) // 使用 errors.Is 判断错误类型
 
-	// 获取锁前重置客户端状态（解决连接池残留问题）
-	//rdb.Ping(ctx)
-
-	// 重新获取锁
-	ok, _ := RentKey(rdb, ctx, key, "v1", time.Minute)
+	// 修改 hk 的 key 为 expired_lock
+	hk.Key = key
+	ok, err := RentKey(ctx, hk)
+	assert.NoError(t, err)
 	assert.True(t, ok)
 }
 
@@ -82,14 +98,26 @@ func TestRenewKey_Failure(t *testing.T) {
 	rdb := createRedisClient()
 	defer rdb.Close()
 
+	hk := &HoldKey{
+		RedisClient: rdb,
+		Key:         "test_key",
+		Value:       "test_value",
+		Expiration:  time.Minute,
+	}
+
 	// 用例1：值不匹配
-	RentKey(rdb, ctx, "renew_fail", "v1", time.Minute)
-	ok, _ := RenewKey(rdb, ctx, "renew_fail", "v2", time.Minute)
+	RentKey(ctx, hk)
+	// 修改 hk 的值以模拟值不匹配
+	hk.Value = "different_value"
+	ok, err := RenewKey(ctx, hk)
 	assert.False(t, ok)
+	assert.NoError(t, err)
 
 	// 用例2：key不存在
-	ok, _ = RenewKey(rdb, ctx, "not_exist", "v1", time.Minute)
+	hk.Key = "non_existent_key"
+	ok, err = RenewKey(ctx, hk)
 	assert.False(t, ok)
+	assert.NoError(t, err)
 }
 
 // TestReleaseKey_SafeDelete 安全删除测试
@@ -97,19 +125,30 @@ func TestReleaseKey_SafeDelete(t *testing.T) {
 	rdb := createRedisClient()
 	defer rdb.Close()
 
+	hk := &HoldKey{
+		RedisClient: rdb,
+		Key:         "test_key",
+		Value:       "test_value",
+		Expiration:  time.Minute,
+	}
+
 	// 初始设置
-	RentKey(rdb, ctx, "release_lock", "v1", time.Minute)
+	RentKey(ctx, hk)
 
 	// 用例1：正确释放
-	ok, _ := ReleaseKey(rdb, ctx, "release_lock", "v1")
+	ok, err := ReleaseKey(ctx, hk)
+	assert.NoError(t, err)
 	assert.True(t, ok)
-	assert.Equal(t, int64(0), rdb.Exists(ctx, "release_lock").Val())
+	assert.Equal(t, int64(0), rdb.Exists(ctx, hk.Key).Val())
 
 	// 用例2：值不匹配时拒绝删除
-	RentKey(rdb, ctx, "release_lock", "v1", time.Minute)
-	ok, _ = ReleaseKey(rdb, ctx, "release_lock", "v2")
+	RentKey(ctx, hk)
+	// 修改 hk 的值以模拟值不匹配
+	hk.Value = "different_value"
+	ok, err = ReleaseKey(ctx, hk)
+	assert.NoError(t, err)
 	assert.False(t, ok)
-	assert.Equal(t, int64(1), rdb.Exists(ctx, "release_lock").Val())
+	assert.Equal(t, int64(1), rdb.Exists(ctx, hk.Key).Val())
 }
 
 // TestReleaseKey_Idempotent 幂等性测试
@@ -117,8 +156,16 @@ func TestReleaseKey_Idempotent(t *testing.T) {
 	rdb := createRedisClient()
 	defer rdb.Close()
 
+	hk := &HoldKey{
+		RedisClient: rdb,
+		Key:         "test_key",
+		Value:       "test_value",
+		Expiration:  time.Minute,
+	}
+
 	// 释放不存在的key
-	ok, _ := ReleaseKey(rdb, ctx, "ghost_key", "v1")
+	ok, err := ReleaseKey(ctx, hk)
+	assert.NoError(t, err)
 	assert.True(t, ok) // 符合幂等性设计[8](@ref)
 }
 
@@ -127,22 +174,37 @@ func TestConcurrentOperations(t *testing.T) {
 	rdb := createRedisClient()
 	defer rdb.Close()
 
+	hk := &HoldKey{
+		RedisClient: rdb,
+		Key:         "test_key",
+		Value:       "test_value",
+		Expiration:  time.Minute,
+	}
+
 	var wg sync.WaitGroup
 	for i := 0; i < 100; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			// 并发获取和释放
-			ok, _ := RentKey(rdb, ctx, "concurrent_lock", "v1", time.Minute)
+			ok, err := RentKey(ctx, hk)
+			if err != nil {
+				t.Errorf("RentKey error: %v", err)
+			}
 			if ok {
-				defer ReleaseKey(rdb, ctx, "concurrent_lock", "v1")
+				defer func() {
+					_, err := ReleaseKey(ctx, hk)
+					if err != nil {
+						t.Errorf("ReleaseKey error: %v", err)
+					}
+				}()
 			}
 		}()
 	}
 	wg.Wait()
 
 	// 最终状态验证
-	assert.Equal(t, int64(0), rdb.Exists(ctx, "concurrent_lock").Val())
+	assert.Equal(t, int64(0), rdb.Exists(ctx, hk.Key).Val())
 }
 
 // TestErrorHandling 错误处理测试
@@ -151,13 +213,20 @@ func TestErrorHandling(t *testing.T) {
 	closedClient := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
 	closedClient.Close()
 
+	hk := &HoldKey{
+		RedisClient: closedClient,
+		Key:         "test_key",
+		Value:       "test_value",
+		Expiration:  time.Minute,
+	}
+
 	// RentKey错误
-	ok, err := RentKey(closedClient, ctx, "error_key", "v1", time.Second)
+	ok, err := RentKey(ctx, hk)
 	assert.False(t, ok)
 	assert.Error(t, err)
 
 	// ReleaseKey错误
-	ok, err = ReleaseKey(closedClient, ctx, "error_key", "v1")
+	ok, err = ReleaseKey(ctx, hk)
 	assert.False(t, ok)
 	assert.Error(t, err)
 }

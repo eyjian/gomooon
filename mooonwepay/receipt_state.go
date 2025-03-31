@@ -2,6 +2,8 @@
 // Wrote by yijian on 2025/03/27
 package mooonwepay
 
+// 微信支付官方文档：https://pay.weixin.qq.com/doc/v3/merchant/4012716452
+
 const (
 	ReceiptStateGenerating = "GENERATING" // 电子回单已受理成功并在处理中
 	ReceiptStateFinished   = "FINISHED"   // 电子回单已处理完成

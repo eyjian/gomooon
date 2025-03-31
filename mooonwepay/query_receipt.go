@@ -20,10 +20,10 @@ type QueryReceiptRequest struct {
 
 // QueryReceiptResponse 查询电子回单响应结构体
 type QueryReceiptResponse struct {
-	State       string `json:"state"`
+	State       string `json:"state"` // 取值参见 receipt_state.go 中的定义
 	CreateTime  string `json:"create_time"`
 	UpdateTime  string `json:"update_time"`
-	HashType    string `json:"hash_type"`
+	HashType    string `json:"hash_type"` // 取值参见 receipt_state.go 中的定义
 	HashValue   string `json:"hash_value"`
 	DownloadUrl string `json:"download_url"`
 }

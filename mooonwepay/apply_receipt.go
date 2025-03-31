@@ -20,7 +20,7 @@ type ApplyReceiptRequest struct {
 
 // ApplyReceiptResponse 电子回单申请响应结构体
 type ApplyReceiptResponse struct {
-	State      string `json:"state"`
+	State      string `json:"state"` // 取值参见 receipt_state.go 中的定义
 	CreateTime string `json:"create_time"`
 }
 

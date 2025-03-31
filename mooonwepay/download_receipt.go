@@ -18,7 +18,7 @@ import (
 // DownloadReceiptRequest 电子回单下载请求结构体
 type DownloadReceiptRequest struct {
 	Ctx           context.Context
-	HashType      string `json:"hash_type"` // 哈希类型（SM3、SHA256），取值需同 QueryReceipt 返回的一致，如果未指定则不校验文件的哈希值
+	HashType      string `json:"hash_type"` //  取值参见 receipt_state.go 中的定义，取值需同 QueryReceipt 返回的一致，如果未指定则不校验文件的哈希值
 	HashValue     string `json:"hash_value"`
 	DownloadUrl   string `json:"download_url"`    // 下载地址
 	LocalFilePath string `json:"local_file_path"` // 本地文件路径（指定了 HashType 才会核验）

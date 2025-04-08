@@ -312,3 +312,26 @@ func TestContainsChinese(t *testing.T) {
 		}
 	}
 }
+
+// go test -v -run="TestIsChinese"
+func TestIsChinese(t *testing.T) {
+	// 编写测试用例
+	tests := []struct {
+		r        rune
+		expected bool
+	}{
+		{'一', true},
+		{'1', false},
+		{'a', false},
+		{'-', false},
+		{'，', false},
+	}
+
+	// 遍历测试用例并执行测试
+	for _, tt := range tests {
+		actual := IsChinese(tt.r)
+		if actual != tt.expected {
+			t.Errorf("IsChinese(%q) = %v, expected %v", tt.r, actual, tt.expected)
+		}
+	}
+}

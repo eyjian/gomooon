@@ -173,9 +173,56 @@ func IsAllChinese(str string) bool {
 // 空字符串返回false
 func ContainsChinese(str string) bool {
 	for _, r := range str {
-		if unicode.Is(unicode.Han, r) || unicode.IsPunct(r) {
+		// unicode.IsPunct 会包含全角英文符号（如！？）
+		if unicode.Is(unicode.Han, r) || IsChinesePunctuation(r) {
 			return true
 		}
 	}
 	return false
+}
+
+// IsChinesePunctuation 判断字符是否为中文标点符号
+func IsChinesePunctuation(r rune) bool {
+	// 主要覆盖：CJK 符号和标点 (0x3000-0x303F)、全角符号 (0xFF00-0xFFEF)
+	return (r >= 0x3000 && r <= 0x303F) ||
+		(r >= 0xFF00 && r <= 0xFFEF)
+}
+
+// IsChinese 判断字符是否为中文
+func IsChinese(r rune) bool {
+	return (r >= 0x4E00 && r <= 0x9FFF) || // 基本汉字
+		(r >= 0x3400 && r <= 0x4DBF) || // 扩展A
+		(r >= 0x20000 && r <= 0x2A6DF) || // 扩展B
+		(r >= 0x2A700 && r <= 0x2B73F) || // 扩展C
+		(r >= 0x2B740 && r <= 0x2B81F) // 扩展D
+	// Go 的 unicode.Is(unicode.Han, r) 已包含上述范围，建议直接使用该内置方法替代手工编码判断
+}
+
+// IsASCIILetter 判断字符是否为 ASCII 字母
+func IsASCIILetter(r rune) bool {
+	return (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z')
+}
+
+// IsASCIIDigit 判断字符是否为 ASCII 数字
+func IsASCIIDigit(r rune) bool {
+	return r >= '0' && r <= '9'
+}
+
+// IsASCIILetterOrDigit 判断字符是否为 ASCII 字母或数字
+func IsASCIILetterOrDigit(r rune) bool {
+	return IsLetter(r) || IsDigit(r)
+}
+
+// IsLetter 判断字符是否为字母
+func IsLetter(r rune) bool {
+	return unicode.IsLetter(r)
+}
+
+// IsDigit 判断字符是否为数字
+func IsDigit(r rune) bool {
+	return unicode.IsNumber(r) // 包含全角数字等
+}
+
+func IsLetterOrDigit(r rune) bool {
+	return IsLetter(r) || IsDigit(r)
 }

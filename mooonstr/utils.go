@@ -210,7 +210,7 @@ func IsASCIIDigit(r rune) bool {
 
 // IsASCIILetterOrDigit 判断字符是否为 ASCII 字母或数字
 func IsASCIILetterOrDigit(r rune) bool {
-	return IsLetter(r) || IsDigit(r)
+	return IsASCIILetter(r) || IsASCIIDigit(r)
 }
 
 // IsLetter 判断字符是否为字母

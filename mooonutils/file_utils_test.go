@@ -97,3 +97,24 @@ func TestUnzip(t *testing.T) {
 		}
 	}
 }
+
+// go test -v -run="TestZipFiles"
+func TestTestZipFiles(t *testing.T) {
+	// 文件名不含中文
+	zipFile := "Test_20250423.zip"
+	err := ZipFiles(zipFile, []string{"str_utils.go", "file_utils.go"})
+	if err != nil {
+		t.Errorf("zip %s error: %s\n", zipFile, err.Error())
+	} else {
+		t.Logf("zip %s ok\n", zipFile)
+	}
+
+	// 文件名含中文
+	zipFile = "测试_文本文档_20250423.zip"
+	err = ZipFiles(zipFile, []string{"str_utils.go", "file_utils.go"})
+	if err != nil {
+		t.Errorf("zip %s error: %s\n", zipFile, err.Error())
+	} else {
+		t.Logf("zip %s ok\n", zipFile)
+	}
+}

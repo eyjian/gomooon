@@ -195,3 +195,64 @@ func Unzip(zipFile, destDir string, options ...bool) ([]string, error) {
 
 	return paths, nil
 }
+
+// ZipFiles 压缩指定文件到ZIP
+// zipFilePath: 生成的ZIP文件路径
+// srcFilePaths: 需要压缩的文件路径列表
+func ZipFiles(zipFilePath string, srcFilePaths []string) error {
+	zipFile, err := os.Create(zipFilePath)
+	if err != nil {
+		return err
+	}
+	defer zipFile.Close()
+
+	zw := zip.NewWriter(zipFile)
+	defer zw.Close()
+
+	for _, srcPath := range srcFilePaths {
+		if err := addFileToZip(zw, srcPath); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func addFileToZip(zw *zip.Writer, srcPath string) error {
+	// 打开源文件
+	file, err := os.Open(srcPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// 获取文件信息
+	info, err := file.Stat()
+	if err != nil {
+		return err
+	}
+	if info.IsDir() {
+		return nil // 跳过目录
+	}
+
+	// 创建ZIP文件头
+	header, err := zip.FileInfoHeader(info)
+	if err != nil {
+		return err
+	}
+
+	// 设置压缩参数
+	header.Name = filepath.Base(srcPath) // 保留文件名
+	header.Method = zip.Deflate          // 使用Deflate算法压缩
+	header.Flags = 0x800                 //启用UTF-8编码
+	//header.Method = zip.Store可实现仅打包不压缩
+
+	// 创建ZIP条目写入器
+	writer, err := zw.CreateHeader(header)
+	if err != nil {
+		return err
+	}
+
+	// 复制文件内容
+	_, err = io.Copy(writer, file)
+	return err
+}

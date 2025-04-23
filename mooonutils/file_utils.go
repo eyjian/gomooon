@@ -210,7 +210,7 @@ func ZipFiles(zipFilePath string, srcFilePaths []string) error {
 	defer zw.Close()
 
 	for _, srcPath := range srcFilePaths {
-		if err := addFileToZip(zw, srcPath); err != nil {
+		if err := addFileToZip(zw, srcPath, ""); err != nil {
 			return err
 		}
 	}
@@ -228,7 +228,41 @@ func ZipDir(zipFilePath, srcDir string) error {
 	return ZipFiles(zipFilePath, srcFilePaths)
 }
 
-func addFileToZip(zw *zip.Writer, srcPath string) error {
+// ZipDirEx 压缩指定目录到ZIP
+// zipFilePath: 生成的ZIP文件路径
+// srcDir: 需要压缩的目录，含子目录及子目录下的文件
+func ZipDirEx(zipFilePath, srcDir string) error {
+	zipFile, err := os.Create(zipFilePath)
+	if err != nil {
+		return err
+	}
+	defer zipFile.Close()
+
+	zw := zip.NewWriter(zipFile)
+	defer zw.Close()
+
+	basePath, _ := filepath.Abs(srcDir)
+	return filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// 计算相对路径并统一分隔符
+		relPath, _ := filepath.Rel(basePath, path)
+		relPath = strings.ReplaceAll(relPath, string(filepath.Separator), "/")
+
+		if info.IsDir() {
+			// 创建目录条目（确保以/结尾）
+			_, err := zw.Create(relPath + "/")
+			return err
+		}
+
+		// 添加文件
+		return addFileToZip(zw, path, relPath)
+	})
+}
+
+func addFileToZip(zw *zip.Writer, srcPath, relPath string) error {
 	// 打开源文件
 	file, err := os.Open(srcPath)
 	if err != nil {
@@ -252,10 +286,14 @@ func addFileToZip(zw *zip.Writer, srcPath string) error {
 	}
 
 	// 设置压缩参数
-	header.Name = filepath.Base(srcPath) // 保留文件名
-	header.Method = zip.Deflate          // 使用Deflate算法压缩
-	header.Flags = 0x800                 //启用UTF-8编码
-	//header.Method = zip.Store可实现仅打包不压缩
+	header.Method = zip.Deflate // 使用Deflate算法压缩
+	header.Flags = 0x800        //启用UTF-8编码
+	header.Method = zip.Deflate // zip.Store可实现仅打包不压缩
+	if relPath == "" {
+		header.Name = filepath.Base(srcPath) // 保留文件名
+	} else {
+		header.Name = relPath
+	}
 
 	// 创建ZIP条目写入器
 	writer, err := zw.CreateHeader(header)

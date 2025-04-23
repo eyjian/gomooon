@@ -141,3 +141,26 @@ func TestZipDir(t *testing.T) {
 		t.Logf("zip %s ok\n", zipFile)
 	}
 }
+
+// go test -v -run="TestZipDirEx"
+func TestZipDirEx(t *testing.T) {
+	srcDir := "."
+
+	// 文件名不含中文
+	zipFile := "Test_2025042303.zip"
+	err := ZipDirEx(zipFile, srcDir)
+	if err != nil {
+		t.Errorf("zip %s error: %s\n", zipFile, err.Error())
+	} else {
+		t.Logf("zip %s ok\n", zipFile)
+	}
+
+	// 文件名含中文
+	zipFile = "测试_文本文档_2025042303.zip"
+	err = ZipDir(zipFile, srcDir)
+	if err != nil {
+		t.Errorf("zip %s error: %s\n", zipFile, err.Error())
+	} else {
+		t.Logf("zip %s ok\n", zipFile)
+	}
+}

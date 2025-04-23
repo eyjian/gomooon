@@ -217,6 +217,17 @@ func ZipFiles(zipFilePath string, srcFilePaths []string) error {
 	return nil
 }
 
+// ZipDir 压缩指定目录到ZIP
+// zipFilePath: 生成的ZIP文件路径
+// srcDir: 需要压缩的目录，不含子目录及子目录下的文件
+func ZipDir(zipFilePath, srcDir string) error {
+	srcFilePaths, err := filepath.Glob(filepath.Join(srcDir, "*"))
+	if err != nil {
+		return err
+	}
+	return ZipFiles(zipFilePath, srcFilePaths)
+}
+
 func addFileToZip(zw *zip.Writer, srcPath string) error {
 	// 打开源文件
 	file, err := os.Open(srcPath)

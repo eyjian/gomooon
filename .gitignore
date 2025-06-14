@@ -5,6 +5,7 @@ go.sum
 *.p12
 mooonpdf/test*.jpg
 mooonpdf/test*.png
+mooonpdf/out_dir
 mooonwepay/*.pdf
 mooonwepay/*.csv
 mooonwepay/*.xlsx

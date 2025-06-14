@@ -2,7 +2,9 @@
 // Wrote by yijian on 2024/12/12
 package mooonpdf
 
-import "testing"
+import (
+	"testing"
+)
 
 // go test -v -run="TestIsPdfFile"
 func TestIsPdfFile(t *testing.T) {

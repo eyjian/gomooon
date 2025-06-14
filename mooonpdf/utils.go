@@ -4,6 +4,7 @@ package mooonpdf
 
 import (
 	pdfapi "github.com/pdfcpu/pdfcpu/pkg/api"
+	pdfmodel "github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
 	"strings"
 )
 
@@ -19,16 +20,11 @@ func IsPdfFile(filepath string) bool {
 		return false
 	}
 
-	// 加载 PDF 上下文
-	_, err := pdfapi.ReadContextFile(filepath)
+	err := pdfapi.ValidateFile(filepath, pdfmodel.NewDefaultConfiguration())
 	return err == nil
 }
 
 // GetPdfPageCount 获取 pdf 文件页数
 func GetPdfPageCount(filepath string) (int, error) {
-	modelCtx, err := pdfapi.ReadContextFile(filepath)
-	if err != nil {
-		return 0, err
-	}
-	return modelCtx.PageCount, nil
+	return pdfapi.PageCountFile(filepath) // 也可通过 ReadContextFile 间接获得页数
 }

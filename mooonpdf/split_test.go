@@ -40,6 +40,6 @@ func TestSplitFile(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else {
-		t.Log(files)
+		t.Logf("[%d] %v", len(files), files)
 	}
 }

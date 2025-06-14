@@ -36,10 +36,10 @@ func TestSplitFile(t *testing.T) {
 	}
 
 	// 将 pdf 按页拆分为一个个 pdf 文件
-	err = SplitFile("test.pdf", outDir, 1)
+	files, err := SplitFile("test.pdf", outDir, 1)
 	if err != nil {
 		t.Error(err)
 	} else {
-		t.Log("success")
+		t.Log(files)
 	}
 }

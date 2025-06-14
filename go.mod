@@ -5,7 +5,6 @@ go 1.23.0
 toolchain go1.23.2
 
 require (
-	github.com/gen2brain/go-fitz v1.22.2
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/pdfcpu/pdfcpu v0.11.0
 	github.com/stretchr/testify v1.10.0

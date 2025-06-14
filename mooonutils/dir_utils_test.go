@@ -51,3 +51,13 @@ func TestPathExists(t *testing.T) {
 		}
 	}
 }
+
+// go test -v -run="TestGetFilesBySuffix"
+func TestGetFilesBySuffix(t *testing.T) {
+	files, err := GetFilesBySuffix(".", []string{".go"})
+	if err != nil {
+		t.Error(err)
+	} else {
+		t.Log(files)
+	}
+}

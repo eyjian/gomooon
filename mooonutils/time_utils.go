@@ -49,6 +49,7 @@ func IsValidTime(s string) bool {
 // 6）YYYY/MM/DD hh:mm:ss
 // 7）YYYY/MM/DD
 // 8）YYYYMMDD
+// 9）YYYY-MM-DDhh:mm:ss
 func NormalizeDateTimeString(str string, withHms bool) string {
 	var builder strings.Builder
 	runes := []rune(str)          // 将字符串转换为 rune 切片
@@ -57,6 +58,8 @@ func NormalizeDateTimeString(str string, withHms bool) string {
 	if len(runes) == 8 && allDigits(runes) {
 		// YYYYMMDD
 		builder.WriteString(string(runes[:4]) + "-" + string(runes[4:6]) + "-" + string(runes[6:]))
+	} else if len(runes) == len("YYYY-MM-DDhh:mm:ss") {
+		builder.WriteString(string(runes[:10]) + " " + string(runes[10:]))
 	} else {
 		for i, r := range runes {
 			switch r {

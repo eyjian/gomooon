@@ -71,6 +71,7 @@ func TestNormalizeDateTimeString(t *testing.T) {
 		{"2026/01/02", "2026-01-02 00:00:00"},
 		{"20260102", "2026-01-02 00:00:00"},
 		{"20260100", "2026-01-00 00:00:00"},
+		{"2026-01-0300:00:01", "2026-01-03 00:00:01"},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.dateStr, func(t *testing.T) {

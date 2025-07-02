@@ -78,6 +78,9 @@ func GetHexNonceStr(length int) string {
 // n 保留的后 n 个字
 func DesensitizeStr(str string, m, n int) string {
 	strLen := len(str)
+	if strLen == 0 {
+		return str
+	}
 
 	// 显示前 m 位
 	start := 0
@@ -260,7 +263,7 @@ func TruncateUtf8String(utf8Str string, maxCharCount int) string {
 	return string(runes[:maxCharCount])
 }
 
-//func TruncateUtf8String(utf8Str string, maxCharCount int) string { 
+//func TruncateUtf8String(utf8Str string, maxCharCount int) string {
 //	if utf8.RuneCountInString(utf8Str) <= maxCharCount {
 //		return utf8Str
 //	}

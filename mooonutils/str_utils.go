@@ -77,29 +77,40 @@ func GetHexNonceStr(length int) string {
 // m 保留的前 m 个字
 // n 保留的后 n 个字
 func DesensitizeStr(str string, m, n int) string {
+	// 处理空字符串
+	if str == "" {
+		return ""
+	}
 	strLen := len(str)
-	if strLen == 0 {
-		return str
+
+	// 边界处理：确保 m/n 非负
+	if m < 0 {
+		m = 0
+	}
+	if n < 0 {
+		n = 0
 	}
 
-	// 显示前 m 位
-	start := 0
-	if m > strLen {
-		m = strLen
+	// 若 m+n 超过总长度，直接返回原字符串
+	if m+n >= strLen {
+		return "*"
 	}
-	visibleStart := str[start:m]
 
-	// 显示后 n 位
-	end := strLen - n
-	if end < 0 {
-		end = 0
-	}
+	// 计算安全截取范围
+	start := min(m, strLen)     // 前 m 位，防越界
+	end := max(strLen-n, start) // 后 n 位，避免与起始位置重叠
+
+	// 生成脱敏部分
+	visibleStart := str[:start]
 	visibleEnd := str[end:]
+	maskedLen := strLen - start - (strLen - end) // 中间脱敏长度
 
-	// 生成脱敏后的值
-	masked := visibleStart + strings.Repeat("*", strLen-m-n) + visibleEnd
-
-	return masked
+	// 构建结果
+	var sb strings.Builder
+	sb.WriteString(visibleStart)
+	sb.WriteString(strings.Repeat("*", maskedLen))
+	sb.WriteString(visibleEnd)
+	return sb.String()
 }
 
 // DesensitizeName 脱敏姓名

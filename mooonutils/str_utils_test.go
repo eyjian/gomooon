@@ -84,6 +84,22 @@ func TestDesensitizeStr(t *testing.T) {
 	mask = DesensitizeStr(str, 2, 2)
 	t.Logf("`%s` => %s\n", str, mask)
 
+	str = "112044165412203"
+	mask = DesensitizeStr(str, 100, 2)
+	t.Logf("`%s` => %s\n", str, mask)
+
+	str = "112044165412204"
+	mask = DesensitizeStr(str, 2, 200)
+	t.Logf("`%s` => %s\n", str, mask)
+
+	str = "1"
+	mask = DesensitizeStr(str, 2, 2)
+	t.Logf("`%s` => %s\n", str, mask)
+
+	str = "123"
+	mask = DesensitizeStr(str, 2, 2)
+	t.Logf("`%s` => %s\n", str, mask)
+
 	str = ""
 	mask = DesensitizeStr(str, 2, 2)
 	t.Logf("[EMPTY] `%s` => %s\n", str, mask)

@@ -29,3 +29,23 @@ func TestGetPdfPageCount(t *testing.T) {
 		t.Log(count)
 	}
 }
+
+// go test -v -run="TestValidatePdf"
+func TestValidatePdf(t *testing.T) {
+	err := ValidatePdf("test.pdf")
+	if err != nil {
+		t.Error(err)
+	} else {
+		t.Log("validate ok")
+	}
+}
+
+// go test -v -run="TestOptimizePdf"
+func TestOptimizePdf(t *testing.T) {
+	err := OptimizePdf("test.pdf", "new_test.pdf")
+	if err != nil {
+		t.Error(err)
+	} else {
+		t.Log("optimize ok")
+	}
+}

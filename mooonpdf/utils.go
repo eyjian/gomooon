@@ -28,3 +28,13 @@ func IsPdfFile(filepath string) bool {
 func GetPdfPageCount(filepath string) (int, error) {
 	return pdfapi.PageCountFile(filepath) // 也可通过 ReadContextFile 间接获得页数
 }
+
+func ValidatePdf(filepath string) error {
+	config := pdfmodel.NewDefaultConfiguration()
+	return pdfapi.ValidateFile(filepath, config)
+}
+
+func OptimizePdf(filepath, newFilepath string) error {
+	config := pdfmodel.NewDefaultConfiguration()
+	return pdfapi.OptimizeFile(filepath, newFilepath, config)
+}

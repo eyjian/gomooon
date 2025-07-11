@@ -45,7 +45,7 @@ func TestBatchVerifyIdcardAndBankcard(t *testing.T) {
 		if errCode != "" || errMsg != "" {
 			t.Logf("ErrCode is `%s`, ErrMessage is `%s`\n", errCode, errMsg)
 		} else {
-			t.Logf("%s\n", v.Err.Error())
+			t.Logf("%+v\n", v.Err)
 		}
 	}
 }

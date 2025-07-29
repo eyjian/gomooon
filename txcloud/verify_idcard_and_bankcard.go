@@ -17,9 +17,9 @@ import (
 // IdcardBankcardTuple 验证结果
 // 过频错误示例：Code=RequestLimitExceeded, Message=您当前每秒请求 `103` 次，超过了每秒频率上限 `100`，请稍后重试。
 type IdcardBankcardTuple struct {
-	Idcard     string
-	Name       string
-	Bankcard   string
+	Idcard     string // 身份证号（如果证件号没有填写，则只验证 Name 和  Bankcard 的一致性）
+	Name       string // 姓名
+	Bankcard   string // 银行帐号/卡号
 	Consistent bool   // 是否一致
 	ErrDesc    string // 不一致原因描述
 	RequestId  string
@@ -85,17 +85,37 @@ func (t *Face) BatchVerifyIdcardAndBankcard(concurrency, failCount int, data map
 // 返回值：一致性返回 true，否则返回 false，出错返回 error；第二个返回值为验证结果描述；第三个返回值为 RequestId
 // 参数 idcard 和 bankcard 可含有空格
 func (t *Face) VerifyIdcardAndBankcard(idcard, name, bankcard string) (bool, string, string, error) {
+	var err error
+	var jsonStr string
 	client, _ := faceid.NewClient(t.credential, "", t.clientProfile)
-	request := faceid.NewBankCardVerificationRequest()
-	request.IdCard = common.StringPtr(strings.ReplaceAll(idcard, " ", ""))
-	request.Name = common.StringPtr(name)
-	request.BankCard = common.StringPtr(strings.ReplaceAll(bankcard, " ", ""))
-	//request.CertType = common.Int64Ptr(0) // 赋值会大幅度降低通过率
 
-	// 发起请求
-	response, err := client.BankCardVerification(request)
+	if idcard == "" {
+		var response *faceid.BankCard2EVerificationResponse
+
+		request := faceid.NewBankCard2EVerificationRequest()
+		request.Name = common.StringPtr(name)
+		request.BankCard = common.StringPtr(strings.ReplaceAll(bankcard, " ", ""))
+
+		response, err = client.BankCard2EVerification(request)
+		if err == nil {
+			jsonStr = response.ToJsonString()
+		}
+	} else {
+		var response *faceid.BankCardVerificationResponse
+
+		request := faceid.NewBankCardVerificationRequest()
+		request.Name = common.StringPtr(name)
+		request.BankCard = common.StringPtr(strings.ReplaceAll(bankcard, " ", ""))
+		request.IdCard = common.StringPtr(strings.ReplaceAll(idcard, " ", ""))
+		//request.CertType = common.Int64Ptr(0) // 赋值会大幅度降低通过率
+
+		// 发起请求
+		response, err = client.BankCardVerification(request)
+		if err == nil {
+			jsonStr = response.ToJsonString()
+		}
+	}
 	if _, ok := err.(*errors.TencentCloudSDKError); ok {
-		//return false, "", fmt.Errorf("a txcloud API error has returned: %s", err.Error())
 		return false, "", "", err
 	}
 	if err != nil {
@@ -104,12 +124,10 @@ func (t *Face) VerifyIdcardAndBankcard(idcard, name, bankcard string) (bool, str
 
 	// 解析响应
 	resp := FaceResponse{}
-	jsonStr := response.ToJsonString()
 	err = json.Unmarshal([]byte(jsonStr), &resp)
 	if err != nil {
 		return false, "", "", err
 	}
-
 	// 判断是否一致
 	if resp.Response.Result != "0" {
 		return false, resp.Response.Description, resp.Response.RequestId, nil // 不一致

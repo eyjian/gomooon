@@ -53,7 +53,7 @@ func TestVerifyIdcardAndName(t *testing.T) {
 	name := args[3]
 
 	txCloud := NewFace(secretId, secretKey)
-	ok, desc, err := txCloud.VerifyIdcardAndName(idcard, name)
+	ok, desc, requestId, err := txCloud.VerifyIdcardAndName(idcard, name)
 	if err != nil {
 		if e, ok := err.(*errors.TencentCloudSDKError); ok {
 			t.Logf("e.Code is `%s`, e.Message is `%s`\n", e.Code, e.Message)
@@ -61,7 +61,7 @@ func TestVerifyIdcardAndName(t *testing.T) {
 			t.Logf("%s\n", err.Error())
 		}
 	} else if !ok {
-		t.Errorf("%s", desc)
+		t.Errorf("(RequestId=%s) %s", requestId, desc)
 	} else {
 		t.Log(ok, desc)
 	}

@@ -22,7 +22,8 @@ type IdcardBankcardTuple struct {
 	Bankcard   string
 	Consistent bool   // 是否一致
 	ErrDesc    string // 不一致原因描述
-	Err        error  // if txcloudErr, ok := err.(*errors.TencentCloudSDKError); ok {
+	RequestId  string
+	Err        error // if txcloudErr, ok := err.(*errors.TencentCloudSDKError); ok {
 }
 
 // BatchVerifyIdcardAndBankcard 批量验证身份证号码和银行卡是否匹配
@@ -49,7 +50,7 @@ func (t *Face) BatchVerifyIdcardAndBankcard(concurrency, failCount int, data map
 			defer wg.Done()
 			defer func() { <-semaphore }() // 释放信号量
 
-			ok, desc, err := t.VerifyIdcardAndBankcard(v.Idcard, v.Name, v.Bankcard)
+			ok, desc, requestId, err := t.VerifyIdcardAndBankcard(v.Idcard, v.Name, v.Bankcard)
 			if err != nil {
 				v.Err = err
 				v.Consistent = false
@@ -58,6 +59,7 @@ func (t *Face) BatchVerifyIdcardAndBankcard(concurrency, failCount int, data map
 				v.Err = nil
 				v.Consistent = ok
 				v.ErrDesc = desc
+				v.RequestId = requestId
 			}
 			if err != nil {
 				atomic.AddInt32(&fail, 1)
@@ -80,24 +82,24 @@ func (t *Face) BatchVerifyIdcardAndBankcard(concurrency, failCount int, data map
 
 // VerifyIdcardAndBankcard 验证身份证号码和银行卡是否匹配
 // 腾讯云频率限制：默认接口请求频率限制 20 次/秒
-// 返回值：一致性返回 true，否则返回 false，出错返回 error；第二个返回值为验证结果描述
+// 返回值：一致性返回 true，否则返回 false，出错返回 error；第二个返回值为验证结果描述；第三个返回值为 RequestId
 // 参数 idcard 和 bankcard 可含有空格
-func (t *Face) VerifyIdcardAndBankcard(idcard, name, bankcard string) (bool, string, error) {
+func (t *Face) VerifyIdcardAndBankcard(idcard, name, bankcard string) (bool, string, string, error) {
 	client, _ := faceid.NewClient(t.credential, "", t.clientProfile)
 	request := faceid.NewBankCardVerificationRequest()
 	request.IdCard = common.StringPtr(strings.ReplaceAll(idcard, " ", ""))
 	request.Name = common.StringPtr(name)
 	request.BankCard = common.StringPtr(strings.ReplaceAll(bankcard, " ", ""))
-	request.CertType = common.Int64Ptr(0)
+	//request.CertType = common.Int64Ptr(0) // 赋值会大幅度降低通过率
 
 	// 发起请求
 	response, err := client.BankCardVerification(request)
 	if _, ok := err.(*errors.TencentCloudSDKError); ok {
 		//return false, "", fmt.Errorf("a txcloud API error has returned: %s", err.Error())
-		return false, "", err
+		return false, "", "", err
 	}
 	if err != nil {
-		return false, "", err
+		return false, "", "", err
 	}
 
 	// 解析响应
@@ -105,12 +107,12 @@ func (t *Face) VerifyIdcardAndBankcard(idcard, name, bankcard string) (bool, str
 	jsonStr := response.ToJsonString()
 	err = json.Unmarshal([]byte(jsonStr), &resp)
 	if err != nil {
-		return false, "", err
+		return false, "", "", err
 	}
 
 	// 判断是否一致
 	if resp.Response.Result != "0" {
-		return false, resp.Response.Description, nil // 不一致
+		return false, resp.Response.Description, resp.Response.RequestId, nil // 不一致
 	}
-	return true, resp.Response.Description, nil // 一致
+	return true, resp.Response.Description, resp.Response.RequestId, nil // 一致
 }

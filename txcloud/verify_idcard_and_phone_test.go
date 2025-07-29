@@ -60,7 +60,7 @@ func TestVerifyIdcardAndPhone(t *testing.T) {
 	phone := args[4]
 
 	txCloud := NewFace(secretId, secretKey)
-	ok, desc, err := txCloud.VerifyIdcardAndPhone(idcard, name, phone)
+	ok, desc, requestId, err := txCloud.VerifyIdcardAndPhone(idcard, name, phone)
 	if err != nil {
 		errCode, errMsg := GetErrCodeAndErrMsg(err)
 		if errCode != "" || errMsg != "" {
@@ -69,7 +69,7 @@ func TestVerifyIdcardAndPhone(t *testing.T) {
 			t.Logf("%s\n", err.Error())
 		}
 	} else if !ok {
-		t.Errorf("%s", desc)
+		t.Errorf("(RequestId=%s) %s", requestId, desc)
 	} else {
 		t.Log(ok, desc)
 	}

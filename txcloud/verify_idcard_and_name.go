@@ -21,7 +21,8 @@ type IdcardNameTuple struct {
 	Name       string
 	Consistent bool   // 是否一致
 	ErrDesc    string // 不一致原因描述
-	Err        error  // if txcloudErr, ok := err.(*errors.TencentCloudSDKError); ok {
+	RequestId  string
+	Err        error // if txcloudErr, ok := err.(*errors.TencentCloudSDKError); ok {
 }
 
 // BatchVerifyIdcardAndName 批量验证身份证号码和姓名是否匹配
@@ -48,7 +49,7 @@ func (t *Face) BatchVerifyIdcardAndName(concurrency, failCount int, data map[str
 			defer wg.Done()
 			defer func() { <-semaphore }() // 释放信号量
 
-			ok, desc, err := t.VerifyIdcardAndName(v.Idcard, v.Name)
+			ok, desc, requestId, err := t.VerifyIdcardAndName(v.Idcard, v.Name)
 			if err != nil {
 				v.Err = err
 				v.Consistent = false
@@ -57,6 +58,7 @@ func (t *Face) BatchVerifyIdcardAndName(concurrency, failCount int, data map[str
 				v.Err = nil
 				v.Consistent = ok
 				v.ErrDesc = desc
+				v.RequestId = requestId
 			}
 			if err != nil {
 				atomic.AddInt32(&fail, 1)
@@ -79,9 +81,9 @@ func (t *Face) BatchVerifyIdcardAndName(concurrency, failCount int, data map[str
 
 // VerifyIdcardAndName 验证身份证号码和姓名是否匹配
 // 腾讯云频率限制：默认接口请求频率限制 100 次/秒
-// 返回值：一致性返回 true，否则返回 false，出错返回 error；第二个返回值为验证结果描述
+// 返回值：一致性返回 true，否则返回 false，出错返回 error；第二个返回值为验证结果描述；第三个返回值为 RequestId
 // 参数 idcard 可含有空格
-func (t *Face) VerifyIdcardAndName(idcard, name string) (bool, string, error) {
+func (t *Face) VerifyIdcardAndName(idcard, name string) (bool, string, string, error) {
 	client, _ := faceid.NewClient(t.credential, "", t.clientProfile)
 	request := faceid.NewIdCardVerificationRequest()
 	request.IdCard = common.StringPtr(strings.ReplaceAll(idcard, " ", ""))
@@ -91,10 +93,10 @@ func (t *Face) VerifyIdcardAndName(idcard, name string) (bool, string, error) {
 	response, err := client.IdCardVerification(request)
 	if _, ok := err.(*errors.TencentCloudSDKError); ok {
 		//return false, "", fmt.Errorf("a txcloud API error has returned: %s", err.Error())
-		return false, "", err
+		return false, "", "", err
 	}
 	if err != nil {
-		return false, "", err
+		return false, "", "", err
 	}
 
 	// 解析响应
@@ -102,12 +104,12 @@ func (t *Face) VerifyIdcardAndName(idcard, name string) (bool, string, error) {
 	jsonStr := response.ToJsonString()
 	err = json.Unmarshal([]byte(jsonStr), &resp)
 	if err != nil {
-		return false, "", err
+		return false, "", "", err
 	}
 
 	// 判断是否一致
 	if resp.Response.Result != "0" {
-		return false, resp.Response.Description, nil // 不一致
+		return false, resp.Response.Description, resp.Response.RequestId, nil // 不一致
 	}
-	return true, resp.Response.Description, nil // 一致
+	return true, resp.Response.Description, resp.Response.RequestId, nil // 一致
 }

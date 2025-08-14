@@ -3,7 +3,9 @@
 package mooonstr
 
 import (
+	"context"
 	"fmt"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"regexp"
@@ -12,6 +14,35 @@ import (
 	"unicode"
 	"unicode/utf8"
 )
+
+// GetOTELTraceId 从 context 中获取 traceId
+func GetOTELTraceId(ctx context.Context) string {
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if spanCtx.HasTraceID() {
+		return spanCtx.TraceID().String() // 如 "4bf92f3577b34da6a3ce929d0e0e4736"
+	}
+	return ""
+}
+
+// WithOTELTraceId 向 context 中注入 OTEL 规范的 traceID
+func WithOTELTraceId(ctx context.Context, traceID string) context.Context {
+	// 使用 OTEL 提供的 TraceIDFromHex 解析字符串（支持 32 字符的十六进制格式）
+	tid, err := trace.TraceIDFromHex(traceID)
+	if err != nil {
+		// 解析失败（如格式错误），返回原 context
+		return ctx
+	}
+
+	// 创建包含该 traceID 的 SpanContext
+	spanCtx := trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID:    tid,
+		SpanID:     trace.SpanID{}, // 可根据需要设置具体的 spanID
+		TraceFlags: trace.FlagsSampled,
+	})
+
+	// 将 SpanContext 注入 context
+	return trace.ContextWithSpanContext(ctx, spanCtx)
+}
 
 // CamelCase 驼峰命名法
 // 蛇形命名法可以使用 github.com/stoewer/go-strcase.SnakeCase

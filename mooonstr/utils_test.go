@@ -2,7 +2,18 @@
 // Wrote by yijian on 2024/09/03
 package mooonstr
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
+
+// go test -v -run="TestGetOTELTraceId"
+func TestGetOTELTraceId(t *testing.T) {
+	traceId := "4bf92f3577b34da6a3ce929d0e0e4736"
+	// 生成带 traceID 的上下文
+	ctx := WithOTELTraceId(context.Background(), traceId)
+	t.Logf("traceId: %s => %s\n", traceId, GetOTELTraceId(ctx))
+}
 
 // go test -v -run="TestCamelCase"
 func TestCamelCase(t *testing.T) {

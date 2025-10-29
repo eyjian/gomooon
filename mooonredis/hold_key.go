@@ -85,8 +85,8 @@ type HoldKey struct {
 func RentKey(ctx context.Context, hk *HoldKey) (bool, error) {
 	keys := []string{hk.Key}
 	args := []interface{}{
-		hk.Value,      // value
-		hk.Expiration, // ttl
+		hk.Value,                     // value
+		hk.Expiration.Milliseconds(), // ttl
 	}
 
 	res, err := rentScript.Run(ctx, hk.RedisClient, keys, args...).Int()
@@ -119,7 +119,7 @@ func RenewKey(ctx context.Context, hk *HoldKey) (bool, error) {
 	keys := []string{hk.Key}
 	args := []interface{}{
 		hk.Value,
-		hk.Expiration,
+		hk.Expiration.Milliseconds(),
 	}
 
 	res, err := renewScript.Run(ctx, hk.RedisClient, keys, args...).Int()

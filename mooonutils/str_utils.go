@@ -4,6 +4,7 @@ package mooonutils
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"net/url"
 	"regexp"
@@ -113,16 +114,11 @@ func DesensitizeStr(str string, m, n int) string {
 	return sb.String()
 }
 
-// DesensitizeName 脱敏姓名
-// name 姓名，少数民族的姓名中间可能有点号
+// DesensitizeChineseName 脱敏中文姓名
+// name 中文姓名，少数民族的姓名中间可能有点号
 // m 保留的前 m 个字
 // n 保留的后 n 个字
-// k 单个字的字节数
-func DesensitizeName(name string, m, n, k int) string {
-	if k <= 0 {
-		k = 3
-	}
-
+func DesensitizeChineseName(name string, m, n int) string {
 	var result []rune
 	runes := []rune(name)
 	dotIndex := -1
@@ -159,6 +155,48 @@ func DesensitizeName(name string, m, n, k int) string {
 	}
 
 	return string(result)
+}
+
+// DesensitizeUtf8Str 脱敏utf8字符串，脱敏部分使用“*”替代
+// str 需要脱敏的utf8字符串
+// m 保留的前 m 个字（注意非字节数，而是utf8字）
+// n 保留的后 n 个字（注意非字节数，而是utf8字）
+func DesensitizeUtf8Str(str string, m, n int) string {
+	runes := []rune(str)
+	total := len(runes)
+
+	// 处理空字符串
+	if total == 0 {
+		return ""
+	}
+
+	// 处理m和n为负数的情况，视为0（使用math.Max，注意类型转换）
+	m = int(math.Max(float64(m), 0))
+	n = int(math.Max(float64(n), 0))
+
+	// 前m个字符（不超过总长度，使用math.Min）
+	preLen := int(math.Min(float64(m), float64(total)))
+	pre := runes[:preLen]
+
+	// 计算后缀起始位置，确保不与前缀重叠且不小于0
+	suffixStart := int(math.Max(float64(total-n), float64(preLen)))
+	suffixStart = int(math.Max(float64(suffixStart), 0)) // 确保不小于0
+	suffix := runes[suffixStart:]
+
+	// 计算需要脱敏的字符数量
+	maskedCount := total - preLen - len(suffix)
+	if maskedCount < 0 {
+		maskedCount = 0
+	}
+
+	// 生成脱敏部分
+	masked := make([]rune, maskedCount)
+	for i := range masked {
+		masked[i] = '*'
+	}
+
+	// 拼接结果
+	return string(append(append(pre, masked...), suffix...))
 }
 
 // IsResidentIdentityCardNumber 判断是否为居民身份证号

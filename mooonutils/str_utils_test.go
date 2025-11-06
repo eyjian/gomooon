@@ -62,51 +62,47 @@ func TestGetHexNonceStr(t *testing.T) {
 	}
 }
 
-// go test -v -run="TestDesensitizeStr"
-func TestDesensitizeStr(t *testing.T) {
+// go test -v -run="TestDesensitizeUtf8Str"
+func TestDesensitizeUtf8Str(t *testing.T) {
 	str := ""
-	mask := DesensitizeStr(str, 2, 2)
+	mask := DesensitizeUtf8Str(str, 2, 2)
 	t.Logf("`%s` => %s\n", str, mask)
 
 	str = "11204416541220243X"
-	mask = DesensitizeStr(str, 2, 2)
+	mask = DesensitizeUtf8Str(str, 2, 2)
 	t.Logf("`%s` => %s\n", str, mask)
 
-	mask = DesensitizeStr(str, 3, 2)
+	mask = DesensitizeUtf8Str(str, 3, 2)
 	t.Logf("`%s` => %s\n", str, mask)
 
-	mask = DesensitizeStr(str, 2, 1)
+	mask = DesensitizeUtf8Str(str, 2, 1)
 	t.Logf("`%s` => %s\n", str, mask)
 
-	mask = DesensitizeStr(str, 2, 0)
+	mask = DesensitizeUtf8Str(str, 2, 0)
 	t.Logf("`%s` => %s\n", str, mask)
 
-	mask = DesensitizeStr(str, 0, 2)
+	mask = DesensitizeUtf8Str(str, 0, 2)
 	t.Logf("`%s` => %s\n", str, mask)
 
 	str = "112044165412202"
-	mask = DesensitizeStr(str, 2, 2)
+	mask = DesensitizeUtf8Str(str, 2, 2)
 	t.Logf("`%s` => %s\n", str, mask)
 
 	str = "112044165412203"
-	mask = DesensitizeStr(str, 100, 2)
+	mask = DesensitizeUtf8Str(str, 100, 2)
 	t.Logf("`%s` => %s\n", str, mask)
 
 	str = "112044165412204"
-	mask = DesensitizeStr(str, 2, 200)
+	mask = DesensitizeUtf8Str(str, 2, 200)
 	t.Logf("`%s` => %s\n", str, mask)
 
 	str = "1"
-	mask = DesensitizeStr(str, 2, 2)
+	mask = DesensitizeUtf8Str(str, 2, 2)
 	t.Logf("`%s` => %s\n", str, mask)
 
 	str = "123"
-	mask = DesensitizeStr(str, 2, 2)
+	mask = DesensitizeUtf8Str(str, 2, 2)
 	t.Logf("`%s` => %s\n", str, mask)
-
-	str = ""
-	mask = DesensitizeStr(str, 2, 2)
-	t.Logf("[EMPTY] `%s` => %s\n", str, mask)
 }
 
 // go test -v -run="TestDesensitizeChineseName"
@@ -123,7 +119,7 @@ func TestDesensitizeChineseName(t *testing.T) {
 	mask = DesensitizeChineseName(name, 1, 1)
 	t.Logf("%s => %s\n", name, mask)
 
-	name = "王麻子"
+	name = "王小子"
 	mask = DesensitizeChineseName(name, 1, 1)
 	t.Logf("%s => %s\n", name, mask)
 
@@ -143,7 +139,7 @@ func TestDesensitizeChineseName(t *testing.T) {
 	mask = DesensitizeChineseName(name, 1, 1)
 	t.Logf("%s => %s\n", name, mask)
 
-	name = "张三.欧阳大侠"
+	name = "李四.欧阳小侠"
 	mask = DesensitizeChineseName(name, 0, 1)
 	t.Logf("%s => %s\n", name, mask)
 

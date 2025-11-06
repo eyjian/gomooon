@@ -74,36 +74,50 @@ func GetHexNonceStr(length int) string {
 	return getNonceStr(length, hexCharset)
 }
 
-// DesensitizeStr 脱敏字符串
-// m 保留的前 m 个字
-// n 保留的后 n 个字
-func DesensitizeStr(str string, m, n int) string {
-	// 处理空字符串
-	if str == "" || m < 0 || n < 0 {
-		return ""
+// 通用的字符串脱敏逻辑函数
+func desensitizeCommon(runes []rune, m, n int) string {
+	total := len(runes)
+	// 处理m和n为负数的情况，视为0
+	m = int(math.Max(float64(m), 0))
+	n = int(math.Max(float64(n), 0))
+	// 前m个字符（不超过总长度）
+	preLen := int(math.Min(float64(m), float64(total)))
+	pre := runes[:preLen]
+	// 计算后缀起始位置，确保不与前缀重叠且不小于0
+	suffixStart := int(math.Max(float64(total-n), float64(preLen)))
+	suffixStart = int(math.Max(float64(suffixStart), 0))
+	suffix := runes[suffixStart:]
+	// 计算需要脱敏的字符数量
+	maskedCount := total - preLen - len(suffix)
+	if maskedCount < 0 {
+		maskedCount = 0
 	}
-	strLen := len(str)
-
-	// 若 m+n 超过总长度，直接返回原字符串
-	if m+n >= strLen {
-		return "*"
-	}
-
-	// 计算安全截取范围
-	start := min(m, strLen)     // 前 m 位，防越界
-	end := max(strLen-n, start) // 后 n 位，避免与起始位置重叠
-
 	// 生成脱敏部分
-	visibleStart := str[:start]
-	visibleEnd := str[end:]
-	maskedLen := strLen - start - (strLen - end) // 中间脱敏长度
+	masked := make([]rune, maskedCount)
+	for i := range masked {
+		masked[i] = '*'
+	}
+	// 拼接结果
+	return string(append(append(pre, masked...), suffix...))
+}
 
-	// 构建结果
-	var sb strings.Builder
-	sb.WriteString(visibleStart)
-	sb.WriteString(strings.Repeat("*", maskedLen))
-	sb.WriteString(visibleEnd)
-	return sb.String()
+// 处理无点号的中文姓名脱敏
+func desensitizeChineseNameWithoutDot(runes []rune, m, n int) string {
+	return desensitizeCommon(runes, m, n)
+}
+
+// 处理有点号的中文姓名脱敏
+func desensitizeChineseNameWithDot(runes []rune, m, n, dotIndex int) string {
+	var result []rune
+	result = append(result, runes[:m]...)
+	result = append(result, []rune(strings.Repeat("*", dotIndex-m))...)
+	result = append(result, '.')
+	remain := len(runes) - dotIndex - 1 - n
+	if remain > 0 {
+		result = append(result, []rune(strings.Repeat("*", remain))...)
+	}
+	result = append(result, runes[len(runes)-n:]...)
+	return string(result)
 }
 
 // DesensitizeChineseName 脱敏中文姓名
@@ -111,45 +125,26 @@ func DesensitizeStr(str string, m, n int) string {
 // m 保留的前 m 个字
 // n 保留的后 n 个字
 func DesensitizeChineseName(name string, m, n int) string {
-	var result []rune
-	runes := []rune(name)
-	dotIndex := -1
-
-	if name == "" || m < 0 || n < 0 {
+	if name == "" {
 		return ""
 	}
+	runes := []rune(name)
+	dotIndex := -1
 	for i, r := range runes {
 		if r == '.' {
 			dotIndex = i
 			break
 		}
 	}
-
-	// If the name has only two characters
 	if len(runes) == 2 {
 		if m != 0 {
 			n = 0
 		}
 	}
-
 	if dotIndex == -1 {
-		result = append(result, runes[:m]...)
-		result = append(result, []rune(strings.Repeat("*", len(runes)-m-n))...)
-		result = append(result, runes[len(runes)-n:]...)
-	} else {
-		result = append(result, runes[:m]...)
-		result = append(result, []rune(strings.Repeat("*", dotIndex-m))...)
-		result = append(result, '.')
-
-		remain := len(runes) - dotIndex - 1 - n
-		if remain > 0 {
-			result = append(result, []rune(strings.Repeat("*", remain))...)
-		}
-
-		result = append(result, runes[len(runes)-n:]...)
+		return desensitizeChineseNameWithoutDot(runes, m, n)
 	}
-
-	return string(result)
+	return desensitizeChineseNameWithDot(runes, m, n, dotIndex)
 }
 
 // DesensitizeUtf8Str 脱敏utf8字符串，脱敏部分使用“*”替代
@@ -157,41 +152,11 @@ func DesensitizeChineseName(name string, m, n int) string {
 // m 保留的前 m 个字（注意非字节数，而是utf8字）
 // n 保留的后 n 个字（注意非字节数，而是utf8字）
 func DesensitizeUtf8Str(str string, m, n int) string {
-	runes := []rune(str)
-	total := len(runes)
-
-	// 处理空字符串
-	if total == 0 || m < 0 || n < 0 {
+	if str == "" {
 		return ""
 	}
-
-	// 处理m和n为负数的情况，视为0（使用math.Max，注意类型转换）
-	m = int(math.Max(float64(m), 0))
-	n = int(math.Max(float64(n), 0))
-
-	// 前m个字符（不超过总长度，使用math.Min）
-	preLen := int(math.Min(float64(m), float64(total)))
-	pre := runes[:preLen]
-
-	// 计算后缀起始位置，确保不与前缀重叠且不小于0
-	suffixStart := int(math.Max(float64(total-n), float64(preLen)))
-	suffixStart = int(math.Max(float64(suffixStart), 0)) // 确保不小于0
-	suffix := runes[suffixStart:]
-
-	// 计算需要脱敏的字符数量
-	maskedCount := total - preLen - len(suffix)
-	if maskedCount < 0 {
-		maskedCount = 0
-	}
-
-	// 生成脱敏部分
-	masked := make([]rune, maskedCount)
-	for i := range masked {
-		masked[i] = '*'
-	}
-
-	// 拼接结果
-	return string(append(append(pre, masked...), suffix...))
+	runes := []rune(str)
+	return desensitizeCommon(runes, m, n)
 }
 
 // IsResidentIdentityCardNumber 判断是否为居民身份证号

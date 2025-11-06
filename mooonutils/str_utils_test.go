@@ -64,8 +64,12 @@ func TestGetHexNonceStr(t *testing.T) {
 
 // go test -v -run="TestDesensitizeStr"
 func TestDesensitizeStr(t *testing.T) {
-	str := "11204416541220243X"
+	str := ""
 	mask := DesensitizeStr(str, 2, 2)
+	t.Logf("`%s` => %s\n", str, mask)
+
+	str = "11204416541220243X"
+	mask = DesensitizeStr(str, 2, 2)
 	t.Logf("`%s` => %s\n", str, mask)
 
 	mask = DesensitizeStr(str, 3, 2)
@@ -105,54 +109,58 @@ func TestDesensitizeStr(t *testing.T) {
 	t.Logf("[EMPTY] `%s` => %s\n", str, mask)
 }
 
-// go test -v -run="TestDesensitizeName"
-func TestDesensitizeName(t *testing.T) {
-	name := "张三"
-	mask := DesensitizeName(name, 0, 1, 3)
+// go test -v -run="TestDesensitizeChineseName"
+func TestDesensitizeChineseName(t *testing.T) {
+	name := ""
+	mask := DesensitizeChineseName(name, 0, 1)
 	t.Logf("%s => %s\n", name, mask)
 
 	name = "张三"
-	mask = DesensitizeName(name, 1, 1, 3)
-	t.Logf("%s => %s\n", name, mask)
-
-	name = "王麻子"
-	mask = DesensitizeName(name, 1, 1, 3)
-	t.Logf("%s => %s\n", name, mask)
-
-	name = "王麻子"
-	mask = DesensitizeName(name, 0, 1, 3)
-	t.Logf("%s => %s\n", name, mask)
-
-	name = "欧阳大侠"
-	mask = DesensitizeName(name, 1, 1, 3)
-	t.Logf("%s => %s\n", name, mask)
-
-	name = "欧阳大侠"
-	mask = DesensitizeName(name, 0, 1, 3)
-	t.Logf("%s => %s\n", name, mask)
-
-	name = "张三.欧阳大侠"
-	mask = DesensitizeName(name, 1, 1, 3)
-	t.Logf("%s => %s\n", name, mask)
-
-	name = "张三.欧阳大侠"
-	mask = DesensitizeName(name, 0, 1, 3)
+	mask = DesensitizeChineseName(name, 0, 1)
 	t.Logf("%s => %s\n", name, mask)
 
 	name = "张三"
-	mask = DesensitizeName(name, 1, 0, 3)
+	mask = DesensitizeChineseName(name, 1, 1)
 	t.Logf("%s => %s\n", name, mask)
 
 	name = "王麻子"
-	mask = DesensitizeName(name, 1, 0, 3)
+	mask = DesensitizeChineseName(name, 1, 1)
+	t.Logf("%s => %s\n", name, mask)
+
+	name = "王麻子"
+	mask = DesensitizeChineseName(name, 0, 1)
 	t.Logf("%s => %s\n", name, mask)
 
 	name = "欧阳大侠"
-	mask = DesensitizeName(name, 1, 0, 3)
+	mask = DesensitizeChineseName(name, 1, 1)
+	t.Logf("%s => %s\n", name, mask)
+
+	name = "欧阳大侠"
+	mask = DesensitizeChineseName(name, 0, 1)
 	t.Logf("%s => %s\n", name, mask)
 
 	name = "张三.欧阳大侠"
-	mask = DesensitizeName(name, 1, 0, 3)
+	mask = DesensitizeChineseName(name, 1, 1)
+	t.Logf("%s => %s\n", name, mask)
+
+	name = "张三.欧阳大侠"
+	mask = DesensitizeChineseName(name, 0, 1)
+	t.Logf("%s => %s\n", name, mask)
+
+	name = "张三"
+	mask = DesensitizeChineseName(name, 1, 0)
+	t.Logf("%s => %s\n", name, mask)
+
+	name = "王麻子"
+	mask = DesensitizeChineseName(name, 1, 0)
+	t.Logf("%s => %s\n", name, mask)
+
+	name = "欧阳大侠"
+	mask = DesensitizeChineseName(name, 1, 0)
+	t.Logf("%s => %s\n", name, mask)
+
+	name = "张三.欧阳大侠"
+	mask = DesensitizeChineseName(name, 1, 0)
 	t.Logf("%s => %s\n", name, mask)
 }
 

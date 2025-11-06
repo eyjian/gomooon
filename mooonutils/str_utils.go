@@ -79,18 +79,10 @@ func GetHexNonceStr(length int) string {
 // n 保留的后 n 个字
 func DesensitizeStr(str string, m, n int) string {
 	// 处理空字符串
-	if str == "" {
+	if str == "" || m < 0 || n < 0 {
 		return ""
 	}
 	strLen := len(str)
-
-	// 边界处理：确保 m/n 非负
-	if m < 0 {
-		m = 0
-	}
-	if n < 0 {
-		n = 0
-	}
 
 	// 若 m+n 超过总长度，直接返回原字符串
 	if m+n >= strLen {
@@ -123,6 +115,9 @@ func DesensitizeChineseName(name string, m, n int) string {
 	runes := []rune(name)
 	dotIndex := -1
 
+	if name == "" || m < 0 || n < 0 {
+		return ""
+	}
 	for i, r := range runes {
 		if r == '.' {
 			dotIndex = i
@@ -166,7 +161,7 @@ func DesensitizeUtf8Str(str string, m, n int) string {
 	total := len(runes)
 
 	// 处理空字符串
-	if total == 0 {
+	if total == 0 || m < 0 || n < 0 {
 		return ""
 	}
 

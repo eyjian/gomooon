@@ -74,39 +74,44 @@ func GetHexNonceStr(length int) string {
 	return getNonceStr(length, hexCharset)
 }
 
-// 通用的字符串脱敏逻辑函数
+// isEmpty 检查字符串是否为空
+func isEmpty(s string) bool {
+	return len(s) == 0
+}
+
+// desensitizeCommon 通用的字符串脱敏逻辑函数
+// runes 输入字符串的rune切片
+// m 保留的前m个字
+// n 保留的后n个字
+// 返回脱敏后的字符串
+// 此函数先处理m和n为负数的情况，将其视为0
+// 然后计算并提取需要保留的前后部分字符串，生成中间脱敏部分，最后拼接成脱敏后的字符串
 func desensitizeCommon(runes []rune, m, n int) string {
 	total := len(runes)
-	// 处理m和n为负数的情况，视为0
 	m = int(math.Max(float64(m), 0))
 	n = int(math.Max(float64(n), 0))
-	// 前m个字符（不超过总长度）
 	preLen := int(math.Min(float64(m), float64(total)))
 	pre := runes[:preLen]
-	// 计算后缀起始位置，确保不与前缀重叠且不小于0
 	suffixStart := int(math.Max(float64(total-n), float64(preLen)))
 	suffixStart = int(math.Max(float64(suffixStart), 0))
 	suffix := runes[suffixStart:]
-	// 计算需要脱敏的字符数量
 	maskedCount := total - preLen - len(suffix)
 	if maskedCount < 0 {
 		maskedCount = 0
 	}
-	// 生成脱敏部分
 	masked := make([]rune, maskedCount)
 	for i := range masked {
 		masked[i] = '*'
 	}
-	// 拼接结果
 	return string(append(append(pre, masked...), suffix...))
 }
 
-// 处理无点号的中文姓名脱敏
+// desensitizeChineseNameWithoutDot 处理无点号的中文姓名脱敏
 func desensitizeChineseNameWithoutDot(runes []rune, m, n int) string {
 	return desensitizeCommon(runes, m, n)
 }
 
-// 处理有点号的中文姓名脱敏
+// desensitizeChineseNameWithDot 处理有点号的中文姓名脱敏
 func desensitizeChineseNameWithDot(runes []rune, m, n, dotIndex int) string {
 	var result []rune
 	result = append(result, runes[:m]...)
@@ -125,7 +130,7 @@ func desensitizeChineseNameWithDot(runes []rune, m, n, dotIndex int) string {
 // m 保留的前 m 个字
 // n 保留的后 n 个字
 func DesensitizeChineseName(name string, m, n int) string {
-	if name == "" {
+	if isEmpty(name) {
 		return ""
 	}
 	runes := []rune(name)
@@ -152,7 +157,7 @@ func DesensitizeChineseName(name string, m, n int) string {
 // m 保留的前 m 个字（注意非字节数，而是utf8字）
 // n 保留的后 n 个字（注意非字节数，而是utf8字）
 func DesensitizeUtf8Str(str string, m, n int) string {
-	if str == "" {
+	if isEmpty(str) {
 		return ""
 	}
 	runes := []rune(str)

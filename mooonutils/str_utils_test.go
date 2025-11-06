@@ -151,11 +151,11 @@ func TestDesensitizeChineseName(t *testing.T) {
 	mask = DesensitizeChineseName(name, 0, 1)
 	t.Logf("%s => %s\n", name, mask)
 
-	name = "张三.欧阳大侠"
+	name = "张三·欧阳大侠"
 	mask = DesensitizeChineseName(name, 1, 1)
 	t.Logf("%s => %s\n", name, mask)
 
-	name = "李四.欧阳小侠"
+	name = "李四·欧阳小侠"
 	mask = DesensitizeChineseName(name, 0, 1)
 	t.Logf("%s => %s\n", name, mask)
 
@@ -171,8 +171,12 @@ func TestDesensitizeChineseName(t *testing.T) {
 	mask = DesensitizeChineseName(name, 1, 0)
 	t.Logf("%s => %s\n", name, mask)
 
-	name = "张三.欧阳大侠"
+	name = "别克木汗·阿卡曼"
 	mask = DesensitizeChineseName(name, 1, 0)
+	t.Logf("%s => %s\n", name, mask)
+
+	name = "阿德力江·木尔扎合麦提"
+	mask = DesensitizeChineseName(name, 1, 1)
 	t.Logf("%s => %s\n", name, mask)
 }
 

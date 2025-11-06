@@ -106,26 +106,7 @@ func desensitizeCommon(runes []rune, m, n int) string {
 	return string(append(append(pre, masked...), suffix...))
 }
 
-// desensitizeChineseNameWithoutDot 处理无点号的中文姓名脱敏
-func desensitizeChineseNameWithoutDot(runes []rune, m, n int) string {
-	return desensitizeCommon(runes, m, n)
-}
-
-// desensitizeChineseNameWithDot 处理有点号的中文姓名脱敏
-func desensitizeChineseNameWithDot(runes []rune, m, n, dotIndex int) string {
-	var result []rune
-	result = append(result, runes[:m]...)
-	result = append(result, []rune(strings.Repeat("*", dotIndex-m))...)
-	result = append(result, '.')
-	remain := len(runes) - dotIndex - 1 - n
-	if remain > 0 {
-		result = append(result, []rune(strings.Repeat("*", remain))...)
-	}
-	result = append(result, runes[len(runes)-n:]...)
-	return string(result)
-}
-
-// DesensitizeChineseName 脱敏中文姓名
+// DesensitizeChineseName 脱敏中文姓名（安全版本）
 // name 中文姓名，少数民族的姓名中间可能有点号
 // m 保留的前 m 个字
 // n 保留的后 n 个字
@@ -134,28 +115,31 @@ func DesensitizeChineseName(name string, m, n int) string {
 		return ""
 	}
 	runes := []rune(name)
+
+	// 查找点号的位置
 	dotIndex := -1
 	for i, r := range runes {
-		if r == '.' {
+		if r == '·' {
 			dotIndex = i
 			break
 		}
 	}
-	if len(runes) == 2 {
-		if m != 0 {
-			n = 0
-		}
+
+	// 如果有点号，将点号前后视为两个独立部分分别脱敏，再用点号连接
+	if dotIndex != -1 {
+		// 脱敏点号前的部分（姓氏）
+		prefixPart := desensitizeCommon(runes[:dotIndex], m, 0) // 只保留前m位，后缀n设为0
+		// 脱敏点号后的部分（名字）
+		suffixPart := desensitizeCommon(runes[dotIndex+1:], 0, n) // 只保留后n位，前缀m设为0
+
+		return prefixPart + "·" + suffixPart
 	}
-	if dotIndex == -1 {
-		return desensitizeChineseNameWithoutDot(runes, m, n)
-	}
-	return desensitizeChineseNameWithDot(runes, m, n, dotIndex)
+
+	// 没有点号，直接通用脱敏
+	return desensitizeCommon(runes, m, n)
 }
 
-// DesensitizeUtf8Str 脱敏utf8字符串，脱敏部分使用“*”替代
-// str 需要脱敏的utf8字符串
-// m 保留的前 m 个字（注意非字节数，而是utf8字）
-// n 保留的后 n 个字（注意非字节数，而是utf8字）
+// DesensitizeUtf8Str 功能保持不变，直接复用通用逻辑
 func DesensitizeUtf8Str(str string, m, n int) string {
 	if isEmpty(str) {
 		return ""

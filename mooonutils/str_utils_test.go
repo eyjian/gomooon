@@ -68,6 +68,14 @@ func TestDesensitizeUtf8Str(t *testing.T) {
 	mask := DesensitizeUtf8Str(str, 2, 2)
 	t.Logf("`%s` => %s\n", str, mask)
 
+	str = "胜"
+	mask = DesensitizeUtf8Str(str, 2, 2)
+	t.Logf("`%s` => %s\n", str, mask)
+
+	str = "u"
+	mask = DesensitizeUtf8Str(str, 2, 2)
+	t.Logf("`%s` => %s\n", str, mask)
+
 	str = "11204416541220243X"
 	mask = DesensitizeUtf8Str(str, 2, 2)
 	t.Logf("`%s` => %s\n", str, mask)
@@ -109,6 +117,14 @@ func TestDesensitizeUtf8Str(t *testing.T) {
 func TestDesensitizeChineseName(t *testing.T) {
 	name := ""
 	mask := DesensitizeChineseName(name, 0, 1)
+	t.Logf("%s => %s\n", name, mask)
+
+	name = "米"
+	mask = DesensitizeChineseName(name, 0, 1)
+	t.Logf("%s => %s\n", name, mask)
+
+	name = "x"
+	mask = DesensitizeChineseName(name, 0, 1)
 	t.Logf("%s => %s\n", name, mask)
 
 	name = "张三"

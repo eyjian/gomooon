@@ -1,6 +1,6 @@
 ---
 name: dicom-doctor
-description: "Use this skill whenever the user mentions DICOM files, medical imaging, radiology, CT scans, MRI scans, or anything related to medical image analysis. This includes: analyzing .dcm files or DICOM ZIP archives, detecting nodules/masses/calcifications/tumors in CT or MRI images, converting DICOM to PNG with different window settings (lung/mediastinum/bone/GGO), generating PDF radiology review reports, checking for lung nodules or brain abnormalities, or any mention of 医学影像, 阅片, DICOM, CT扫描, MRI, 肺结节, 影像报告, dcm文件. Even if the user just says 'look at this scan' or 'check this medical image' or mentions a .dcm file path, activate this skill. Also trigger for requests about Lung-RADS classification, LI-RADS grading, MIP reconstruction, or super-resolution enhancement of medical images."
+description: "Use this skill whenever the user mentions DICOM files, medical imaging, CT scans, MRI scans, or anything related to medical image conversion or chest CT analysis. This includes: converting any DICOM files (CT, MRI, PET, etc.) to PNG images, analyzing chest CT for lung nodules/masses/calcifications, generating PDF radiology review reports for chest CT, or any mention of 医学影像, 阅片, DICOM, 胸部CT, CT扫描, MRI, 核磁, 核磁共振, 肺结节, 影像报告, dcm文件, DICOM转PNG, 影像转换. Even if the user just says 'convert this DICOM to PNG' or 'look at this chest CT' or mentions a .dcm file path, activate this skill. Also trigger for requests about Lung-RADS classification, MIP reconstruction, super-resolution enhancement, or window settings (lung/mediastinum/GGO). Note: AI-assisted review (阅片) currently only supports chest CT; DICOM-to-PNG conversion supports all modalities including MRI, abdominal CT, brain MRI, etc."
 ---
 
 # DICOM Doctor — AI 辅助医学影像阅片 Skill
@@ -54,19 +54,33 @@ description: "Use this skill whenever the user mentions DICOM files, medical ima
 
 ## 概述
 
-DICOM Doctor 是一个 AI 辅助医学影像阅片 skill。接收 DICOM 文件或 ZIP 压缩包 → 自动识别影像类型 → 转换为 PNG → AI 逐张检视全部影像 → 生成 PDF 检查报告。
+DICOM Doctor 是一个 AI 辅助医学影像处理 skill，提供两项核心能力：
 
-### 支持的影像类型
+- **DICOM 转 PNG**：支持所有影像类型（胸部CT、腹部CT、头颅MRI、腹部MRI、核磁等），自动选择合适的窗位策略
+- **AI 辅助阅片**：**当前版本仅支持胸部CT**，逐张检视全部切片并生成 PDF 检查报告
 
-| 影像类型 | 自动识别 | 检测重点 | 分级系统 | MIP | GGO窗 |
-|----------|---------|---------|---------|-----|-------|
-| **胸部CT** | ✅ Modality=CT + BodyPart=CHEST | 肺结节/肿块/钙化 | Lung-RADS | ✅ | ✅ |
-| **腹部CT** | ✅ Modality=CT + BodyPart=ABDOMEN | 肝胆胰脾肾占位 | LI-RADS | ❌ | ❌ |
-| **头颅MRI** | ✅ Modality=MR + BodyPart=HEAD/BRAIN | 脑实质异常信号/占位/脑室扩大/白质病变 | Fazekas | ❌ | ❌ |
-| **腹部MRI** | ✅ Modality=MR + BodyPart=ABDOMEN | 肝脏信号异常/胆道/T1T2DWI对比 | LI-RADS | ❌ | ❌ |
-| **通用** | 🔄 兜底 | AI 自行判断并分析 | — | ❌ | ❌ |
+工作流程：接收 DICOM 文件或 ZIP 压缩包 → 自动识别影像类型 → 转换为 PNG → （胸部CT）AI 逐张检视全部影像 → 生成 PDF 检查报告
 
-> **前置条件**：AI 阅片要求多模态视觉模型。非视觉模型将自动跳过阅片步骤。
+### DICOM 转 PNG 支持的影像类型
+
+| 影像类型 | 自动识别 | 窗位策略 | MIP | GGO窗 |
+|----------|---------|---------|-----|-------|
+| **胸部CT** | ✅ Modality=CT + BodyPart=CHEST | 肺窗/纵隔窗/GGO窗/骨窗 | ✅ | ✅ |
+| **腹部CT** | ✅ Modality=CT + BodyPart=ABDOMEN | 软组织窗/肝脏窗/骨窗 | ❌ | ❌ |
+| **头颅MRI** | ✅ Modality=MR + BodyPart=HEAD/BRAIN | T1/T2/FLAIR/DWI 自适应 | ❌ | ❌ |
+| **腹部MRI** | ✅ Modality=MR + BodyPart=ABDOMEN | T1/T2/DWI 自适应 | ❌ | ❌ |
+| **通用** | 🔄 兜底 | 自动推断 | ❌ | ❌ |
+
+### AI 阅片支持的影像类型
+
+| 影像类型 | 检测重点 | 分级系统 | 状态 |
+|----------|---------|---------|------|
+| **胸部CT** | 肺结节/肿块/钙化 | Lung-RADS | ✅ 已支持 |
+| 腹部CT | 肝胆胰脾肾占位 | LI-RADS | 🔜 后续版本 |
+| 头颅MRI | 脑实质异常信号/占位/白质病变 | Fazekas | 🔜 后续版本 |
+| 腹部MRI | 肝脏信号异常/胆道/T1T2DWI对比 | LI-RADS | 🔜 后续版本 |
+
+> **前置条件**：AI 阅片要求多模态视觉模型。非视觉模型将自动跳过阅片步骤，但 DICOM 转 PNG 功能不受影响。
 
 ## ⚡ 强制执行流程（宿主 AI 必须按此步骤执行）
 
@@ -316,6 +330,14 @@ find "$OUTPUT_DIR" -name "*.md" -type f
 5. **PDF 报告路径**（必须存在，否则任务失败）
 6. 关键异常的影像截图（直接展示给用户查看）
 
+**✅ 完成后必须询问用户**：
+
+> "本次阅片已完成，共发现 **Y 处异常**（详见上方汇总）。**是否需要我对其中某个异常部分进行重点复核或详细说明？** 例如：指定某个结节的层面范围、对某处可疑发现进行二次确认、或针对某个 Lung-RADS 分级给出更详细的解读。"
+
+- 如果用户回复"是"或指定了某个异常区域，则**立即对该区域重新检视对应层面的 PNG 图片**，给出更详细的分析结论，并说明是否需要更新报告。
+- 如果用户回复"否"或无需复核，则任务结束。
+- **此询问不属于"确认"禁令范畴**——它是在任务完成后主动提供的增值服务，不影响执行流程。
+
 ## 输入参数
 
 | 参数 | 类型 | 必填 | 默认值 | 说明 |
@@ -328,7 +350,7 @@ find "$OUTPUT_DIR" -name "*.md" -type f
 | --separate-window-dirs | boolean | 否 | true | 不同窗口类型 PNG 是否分子目录存放 |
 | --mip | boolean | 否 | false | 启用 MIP（最大密度投影）重建，提高微小肺结节检出率 |
 | --mip-slabs | integer | 否 | 5 | MIP slab 厚度（层数），范围 2-20 |
-| --imaging-type | string | 否 | 自动检测 | 手动指定影像类型：`chest_ct`/`abdomen_ct`/`brain_mri`/`abdomen_mri`/`generic` |
+| --imaging-type | string | 否 | 自动检测 | 手动指定影像类型：`chest_ct`/`abdomen_ct`/`brain_mri`/`abdomen_mri`/`generic`。**转换功能支持所有类型；AI 阅片当前仅 `chest_ct` 有效** |
 | --model-name | string | 否 | 无 | 阅片大模型名称，记录到 PDF 报告。宿主 AI 应自动传入自身模型名称 |
 | --review-results-json | string | 否 | 无 | 已完成逐张阅片后的 `review_results.json` 路径；提供后将直接加载正式结果生成报告 |
 | --strict-review | boolean | 否 | false | 启用后，若仍存在"无法识别/待检视"条目，则拒绝生成最终报告并退出 |
@@ -388,10 +410,8 @@ python3 scripts/main.py --input <input_path> --output <output_dir> [options]
 python3 scripts/main.py --input /path/to/chest.zip --output /path/to/dicom_output_20260319_151835
 python3 scripts/main.py --input /path/to/chest.zip --output /path/to/output --enhance --enhance-scale 4
 python3 scripts/main.py --input /path/to/chest.zip --output /path/to/output --mip --window all
-python3 scripts/main.py --input /path/to/abdomen.dcm --output /path/to/output --imaging-type abdomen_ct
-python3 scripts/main.py --input /path/to/brain.zip --output /path/to/output --imaging-type brain_mri
-# 严格模式 + 纯手工/宿主 AI 回填
 python3 scripts/main.py --input /path/to/chest.zip --output /path/to/output --model-name claude-4.6-opus --strict-review
+# 注意：当前版本仅支持胸部CT，其他影像类型（abdomen_ct/brain_mri/abdomen_mri）暂不支持
 # 严格模式 + 外部视觉模型自动逐批回填（OpenAI 兼容接口）
 python3 scripts/main.py --input /path/to/chest.zip --output /path/to/output --strict-review --auto-review-model gpt-4.1 --auto-review-api-base https://api.openai.com/v1 --auto-review-api-key "$OPENAI_API_KEY"
 # 已有接力包时，单独调用外部视觉模型自动补跑全部批次

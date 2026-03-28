@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-DICOM Doctor v2.8.0 - 宿主 AI 自动分批处理模式
+DICOM Doctor v2.9.0 - 宿主 AI 自动分批处理模式
 
 当没有 OpenAI API Key 时，自动切换到宿主 AI 模式：
 1. 自动检测宿主 AI 能力（是否支持图片识别）
@@ -11,8 +11,13 @@ DICOM Doctor v2.8.0 - 宿主 AI 自动分批处理模式
 5. 每批完成后自动合并到总表 review_results.json
 6. 支持断点续跑
 
+v2.9.0 重要变更：
+  - 能力检测默认采用乐观策略（假定支持视觉）
+  - 支持从 --model-name 参数直接检测模型能力
+  - 纯文本模式下给出更清晰的指引
+
 作者: AI Assistant
-版本: 2.8.0
+版本: 2.9.0
 日期: 2026-03-28
 """
 
@@ -43,12 +48,14 @@ class HostAIReviewer:
     3. 自动保存进度和合并结果
     """
     
-    VERSION = "2.7.0"
+    VERSION = "2.9.0"
     
-    def __init__(self, manifest_path: str, output_dir: str, batch_size: int = 15):
+    def __init__(self, manifest_path: str, output_dir: str, batch_size: int = 15,
+                 model_name: str = None):
         self.manifest_path = Path(manifest_path).resolve()
         self.output_dir = Path(output_dir).resolve()
         self.batch_size = batch_size
+        self.model_name = model_name
         
         # 加载 manifest
         with open(self.manifest_path, "r", encoding="utf-8") as f:
@@ -86,20 +93,30 @@ class HostAIReviewer:
         return completed
     
     def _detect_capabilities(self) -> Dict[str, Any]:
-        """检测宿主 AI 能力"""
+        """
+        检测宿主 AI 能力。
+        
+        v2.9.0 变更：
+          - 支持从 model_name 参数直接检测
+          - 默认采用乐观策略（假定支持视觉）
+        """
         try:
             # 尝试导入检测模块
             sys.path.insert(0, str(Path(__file__).parent))
             from model_capability_detector import detect_host_ai_capabilities
-            return detect_host_ai_capabilities()
+            return detect_host_ai_capabilities(model_name=self.model_name)
         except ImportError:
-            logger.warning("未找到模型能力检测模块，使用默认配置")
+            logger.warning("未找到模型能力检测模块，默认假定支持视觉")
+            # v2.9.0: 默认乐观策略，假定支持视觉
             return {
-                "model_name": "unknown",
-                "supports_vision": False,
-                "supports_long_context": False,
+                "model_name": self.model_name or "unknown",
+                "supports_vision": True,
+                "supports_long_context": True,
                 "confidence": "low",
-                "note": "未安装能力检测模块，默认按纯文本模型处理",
+                "note": (
+                    "未安装能力检测模块。根据 SKILL.md 要求（必须使用多模态视觉模型），"
+                    "默认假定当前模型支持视觉能力。如果实际不支持，阅片时会自动降级处理。"
+                ),
             }
     
     def print_capability_report(self):
@@ -340,13 +357,23 @@ class HostAIReviewer:
                 break
     
     def _run_text_only_mode(self):
-        """纯文本模式 - 宿主 AI 不支持图片识别"""
+        """
+        纯文本模式 - 宿主 AI 被检测为不支持图片识别。
+        
+        v2.9.0 优化：
+          - 明确告知宿主 AI 检测可能有误，如果实际支持视觉可忽略此检测
+          - 提供更清晰的操作指引
+        """
         print("\n" + "=" * 60)
         print("【DICOM Doctor 宿主 AI 阅片模式】")
         print("=" * 60)
-        print("\n⚠️  当前宿主 AI 不支持图片识别")
+        print(f"\n⚠️  能力检测结果：当前模型可能不支持图片识别")
         print(f"   检测到的模型: {self.capabilities['model_name']}")
-        print("\n推荐方案（按优先级排序）：")
+        print(f"\n💡 重要提示：")
+        print(f"   如果你（宿主 AI）实际上支持图片识别（多模态视觉能力），")
+        print(f"   请忽略上述检测结果，直接按 SKILL.md 的流程逐批阅片即可。")
+        print(f"   检测可能不准确，因为无法从环境变量中确定你的实际模型。")
+        print(f"\n如果确实不支持图片识别，推荐以下方案（按优先级排序）：")
         print("\n1️⃣  使用 OpenAI API（推荐，最稳定）")
         print("   运行命令：")
         print("   python scripts/main.py --input <dicom文件> --output <输出目录> \\")
@@ -408,7 +435,7 @@ class HostAIReviewer:
 def parse_args():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(
-        description="DICOM Doctor v2.8.0 - 宿主 AI 自动分批阅片模式"
+        description="DICOM Doctor v2.9.0 - 宿主 AI 自动分批阅片模式"
     )
     parser.add_argument(
         "--manifest",
@@ -431,6 +458,12 @@ def parse_args():
         action="store_true",
         help="仅显示当前进度状态",
     )
+    parser.add_argument(
+        "--model-name",
+        type=str,
+        default=None,
+        help="宿主 AI 模型名称（如 claude-4.6-opus），用于提高能力检测准确性",
+    )
     return parser.parse_args()
 
 
@@ -443,6 +476,7 @@ def main():
         manifest_path=args.manifest,
         output_dir=args.output,
         batch_size=args.batch_size,
+        model_name=getattr(args, 'model_name', None),
     )
     
     # 显示状态或运行交互模式

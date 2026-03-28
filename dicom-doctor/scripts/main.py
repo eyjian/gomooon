@@ -710,6 +710,7 @@ def run_pipeline(input_path: str, output_dir: str = None, enhance: bool = False,
                     host_reviewer = HostAIReviewer(
                         manifest_path=str(manifest_path),
                         output_dir=str(output_dir),
+                        model_name=effective_model_name,
                     )
                     
                     # 输出当前进度

@@ -657,7 +657,11 @@ def run_pipeline(input_path: str, output_dir: str = None, enhance: bool = False,
                                                cad_candidates=cad_results)
             logger.info(f"阶段 3 完成: 初始导出 {len(review_results)} 条待检视结果")
 
-            if auto_review_model:
+            # 检查是否有 API Key
+            api_key_available = auto_review_api_key or os.environ.get(auto_review_api_key_env)
+            
+            if auto_review_model and api_key_available:
+                # 使用外部 API 自动阅片
                 manifest_path = output_dir / "review_manifest.json"
                 stub_results_path = output_dir / "review_results_stub.json"
                 merged_results_path = output_dir / "review_results.json"
@@ -689,6 +693,77 @@ def run_pipeline(input_path: str, output_dir: str = None, enhance: bool = False,
                     auto_review_result["stats"]["total"],
                     auto_review_result["stats"]["unrecognizable"],
                 )
+            else:
+                # 没有 API Key，切换到宿主 AI 模式
+                manifest_path = output_dir / "review_manifest.json"
+                logger.info(
+                    "未检测到 OpenAI API Key，自动切换到【宿主 AI 分批处理模式】"
+                )
+                logger.info(
+                    "宿主 AI 将逐批读取图片并完成阅片，每批完成后自动保存进度"
+                )
+                
+                # 导入宿主 AI 审阅模块
+                try:
+                    from host_ai_review import HostAIReviewer
+                    
+                    host_reviewer = HostAIReviewer(
+                        manifest_path=str(manifest_path),
+                        output_dir=str(output_dir),
+                    )
+                    
+                    # 输出当前进度
+                    progress = host_reviewer.get_progress()
+                    logger.info(
+                        "宿主 AI 阅片进度: 已完成 %s/%s 批次，剩余 %s 批次",
+                        progress["completed_batches"],
+                        progress["total_batches"],
+                        progress["remaining_batches"],
+                    )
+                    
+                    if progress["next_batch"]:
+                        logger.info(
+                            "请宿主 AI 继续处理批次 %s，使用以下命令查看详情:",
+                            progress["next_batch"],
+                        )
+                        logger.info(
+                            "  python3 %s --manifest %s --output %s --status",
+                            Path(__file__).parent / "host_ai_review.py",
+                            manifest_path,
+                            output_dir,
+                        )
+                        
+                        # 输出下一批的提示信息
+                        next_batch = host_reviewer.get_next_batch()
+                        if next_batch:
+                            prompt = host_reviewer.generate_host_ai_prompt(next_batch)
+                            print("\n" + "="*60)
+                            print("【宿主 AI 阅片提示 - 请复制给 AI 助手】")
+                            print("="*60)
+                            print(prompt)
+                            print("="*60 + "\n")
+                    else:
+                        logger.info("✅ 所有批次已完成，正在合并结果...")
+                        
+                    # 提示用户如何继续
+                    print("\n" + "="*60)
+                    print("【阅片模式说明】")
+                    print("="*60)
+                    print("当前为【宿主 AI 分批处理模式】")
+                    print("\n请按以下步骤操作:")
+                    print("1. 查看上方的阅片提示")
+                    print("2. 读取对应的 PNG 图片并分析")
+                    print("3. 返回 JSON 格式的阅片结果")
+                    print("4. 我会自动保存并合并到总表")
+                    print("\n如需查看进度，运行:")
+                    print(f"  python3 {Path(__file__).parent / 'host_ai_review.py'} --manifest {manifest_path} --output {output_dir} --status")
+                    print("="*60 + "\n")
+                    
+                except ImportError as e:
+                    logger.warning(
+                        "宿主 AI 审阅模块加载失败: %s，将生成标准批次模板供手动填写",
+                        e,
+                    )
 
     stage3_end = time.time()
     timings.ai_review_seconds = stage3_end - stage3_start

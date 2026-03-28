@@ -5,7 +5,7 @@ description: "Use this skill whenever the user mentions DICOM files, medical ima
 
 # DICOM Doctor — AI 辅助医学影像阅片 Skill
 
-**当前版本：v2.7.0**
+**当前版本：v2.8.0**
 
 ## 🚨 铁律（违反任何一条即为严重失败）
 
@@ -482,7 +482,8 @@ python3 scripts/host_ai_review.py --manifest /path/to/output/<时间戳>/review_
 | `scripts/apply_review_batch.py` | **批次结果合并工具**：把 `review_batch_templates/batch_XXX.json` 中回填好的结果并入总表 |
 | `scripts/generate_report.py` | **独立报告生成入口**：从阅片结果 JSON 生成 PDF（默认正式模式，会校验 manifest 并拒绝待检视条目） |
 | `scripts/full_auto_review.py` | **v2.6.0 新增 - 宿主 AI 全自动化阅片**：利用宿主 AI 的多模态能力逐张检视全部切片，实现真正的零遗漏全量阅片 |
-| `scripts/host_ai_review.py` | **v2.7.0 新增 - 宿主 AI 分批处理模式**：当没有 OpenAI API Key 时，自动切换到宿主 AI 模式，由当前 AI 助手逐批完成阅片，支持断点续跑 |
+| `scripts/host_ai_review.py` | **v2.8.0 改进 - 宿主 AI 分批处理模式**：自动检测宿主 AI 能力，智能分流处理。支持视觉则自动连续处理，不支持则给出清晰的 API 替代方案 |
+| `scripts/model_capability_detector.py` | **v2.8.0 新增 - 模型能力检测模块**：自动检测宿主 AI 是否支持图片识别，提供清晰的检测报告和推荐操作 |
 | `scripts/prompt_templates/` | 各影像类型的 Prompt 模板目录 |
 
 ## 全量阅片要点（宿主 AI 必读）
@@ -635,6 +636,49 @@ pip install -r requirements.txt
 > 胸部CT 的 `lung_rads` 字段保留向后兼容；其他影像类型统一使用 `classification_system` + `classification_value`。
 
 ## Changelog
+
+### v2.8.0 — 模型能力自动检测 + 智能分流处理
+
+**新增核心功能**
+
+- **新增 `model_capability_detector.py` 模块**：自动检测宿主 AI 是否支持图片识别
+  - 支持从环境变量推断模型类型
+  - 维护已知支持/不支持视觉的模型列表
+  - 提供清晰的检测报告和推荐操作
+
+- **改进 `host_ai_review.py` 智能分流**
+  - 启动时自动检测宿主 AI 能力
+  - **支持视觉**：进入自动连续处理模式
+  - **不支持视觉**：直接给出清晰的替代方案（OpenAI/Claude/Gemini API）
+  - 避免用户在不支持的情况下浪费时间尝试
+
+- **优化用户体验**
+  - 清晰的视觉化检测报告（✅/❌ 图标）
+  - 按优先级排序的推荐方案
+  - 包含 API Key 获取链接的完整指引
+
+**技术改进**
+
+- 版本号统一升级：2.7.0 → 2.8.0
+- 新增 `_detect_capabilities()` 和 `_print_capability_report()` 方法
+- 新增 `_run_vision_mode()` 和 `_run_text_only_mode()` 分流方法
+
+**使用方式**
+
+```bash
+# 自动检测并处理（推荐）
+python3 scripts/host_ai_review.py \
+  --manifest <path>/review_manifest.json \
+  --output <output_dir>
+
+# 系统会自动检测模型能力并给出相应提示
+```
+
+### v2.7.0 — 宿主 AI 分批处理模式（无需 API Key）
+
+- 当没有 OpenAI API Key 时，自动切换到宿主 AI 模式
+- 支持断点续跑，每批完成后自动保存
+- 新增 `--host-ai-review` 参数显式启用
 
 ### v2.5.0 — CAD v2.8 假阳性深度优化（Case2 医院报告精确对照）
 

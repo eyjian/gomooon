@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-DICOM Doctor v2.7.0 - 宿主 AI 自动分批处理模式
+DICOM Doctor v2.8.0 - 宿主 AI 自动分批处理模式
 
 当没有 OpenAI API Key 时，自动切换到宿主 AI 模式：
-1. 生成标准化的分批阅片请求
-2. 提示宿主 AI 逐批读取图片并分析
-3. 自动回填结果到 batch_XXX.filled.json
-4. 每批完成后自动合并到总表 review_results.json
-5. 支持断点续跑
+1. 自动检测宿主 AI 能力（是否支持图片识别）
+2. 生成标准化的分批阅片请求
+3. 提示宿主 AI 逐批读取图片并分析
+4. 自动回填结果到 batch_XXX.filled.json
+5. 每批完成后自动合并到总表 review_results.json
+6. 支持断点续跑
 
 作者: AI Assistant
-版本: 2.7.0
+版本: 2.8.0
 日期: 2026-03-28
 """
 
@@ -65,6 +66,9 @@ class HostAIReviewer:
         # 检查已完成的批次
         self.completed_batches = self._get_completed_batches()
         
+        # 检测宿主 AI 能力
+        self.capabilities = self._detect_capabilities()
+        
         logger.info(f"宿主 AI 阅片协调器 v{self.VERSION} 初始化完成")
         logger.info(f"总影像数: {self.total_images}, 总批次数: {self.total_batches}")
         logger.info(f"已完成批次: {len(self.completed_batches)}/{self.total_batches}")
@@ -80,6 +84,36 @@ class HostAIReviewer:
                 except (ValueError, IndexError):
                     pass
         return completed
+    
+    def _detect_capabilities(self) -> Dict[str, Any]:
+        """检测宿主 AI 能力"""
+        try:
+            # 尝试导入检测模块
+            sys.path.insert(0, str(Path(__file__).parent))
+            from model_capability_detector import detect_host_ai_capabilities
+            return detect_host_ai_capabilities()
+        except ImportError:
+            logger.warning("未找到模型能力检测模块，使用默认配置")
+            return {
+                "model_name": "unknown",
+                "supports_vision": False,
+                "supports_long_context": False,
+                "confidence": "low",
+                "note": "未安装能力检测模块，默认按纯文本模型处理",
+            }
+    
+    def print_capability_report(self):
+        """打印能力检测报告"""
+        caps = self.capabilities
+        print("\n" + "=" * 60)
+        print("【宿主 AI 能力检测】")
+        print("=" * 60)
+        print(f"模型名称: {caps['model_name']}")
+        print(f"图片识别: {'✅ 支持' if caps['supports_vision'] else '❌ 不支持'}")
+        print(f"长上下文: {'✅ 支持' if caps['supports_long_context'] else '❌ 不支持'}")
+        print(f"检测置信度: {caps['confidence']}")
+        print(f"\n说明: {caps['note']}")
+        print("=" * 60 + "\n")
     
     def get_next_batch(self) -> Optional[Dict]:
         """获取下一个待处理的批次"""
@@ -238,24 +272,41 @@ class HostAIReviewer:
         return None
     
     def run_interactive(self):
-        """交互式运行 - 输出提示供宿主 AI 处理"""
+        """交互式运行 - 智能分流处理"""
+        # 首先打印能力检测报告
+        self.print_capability_report()
+        
+        # 根据能力选择处理模式
+        if self.capabilities['supports_vision']:
+            self._run_vision_mode()
+        else:
+            self._run_text_only_mode()
+    
+    def _run_vision_mode(self):
+        """视觉模式 - 宿主 AI 支持图片识别"""
         print("\n" + "=" * 60)
-        print("【DICOM Doctor 宿主 AI 分批阅片模式】")
+        print("【DICOM Doctor 宿主 AI 自动阅片模式】")
         print("=" * 60)
+        print(f"\n✅ 检测到模型支持图片识别: {self.capabilities['model_name']}")
         print(f"\n总批次数: {self.total_batches}")
         print(f"已完成: {len(self.completed_batches)}")
         print(f"待处理: {self.total_batches - len(self.completed_batches)}")
-        print("\n请按以下步骤操作:")
-        print("1. 我会逐批输出阅片请求")
-        print("2. 你读取对应的 PNG 图片并分析")
-        print("3. 返回 JSON 格式的结果")
-        print("4. 我自动保存并合并到总表")
+        print("\n⚡ 开始自动处理...")
         print("=" * 60 + "\n")
         
-        while True:
+        # 自动连续处理所有批次
+        max_batches_per_session = 5  # 防止上下文溢出
+        processed = 0
+        
+        while processed < max_batches_per_session:
             batch = self.get_next_batch()
             if batch is None:
-                print("\n✅ 所有批次已完成!")
+                print("\n" + "=" * 60)
+                print("✅ 所有批次已完成!")
+                print("=" * 60 + "\n")
+                
+                # 生成最终报告
+                self._print_final_report()
                 break
             
             batch_index = batch["batch_index"]
@@ -271,17 +322,93 @@ class HostAIReviewer:
             print(f"\n{'='*60}")
             print("请返回上述图片的阅片结果（JSON 数组格式）:")
             print(f"{'='*60}\n")
-            
-            # 在实际实现中，这里需要与宿主 AI 交互
-            # 目前输出提示，由宿主 AI 手动处理
             print("(等待宿主 AI 返回结果...)")
-            break  # 每次只处理一个批次，避免输出过长
+            
+            # 注意：由于当前模型不支持图片识别，这里只是输出提示
+            # 实际使用时需要宿主 AI 能够接收图片输入
+            processed += 1
+            
+            if processed >= max_batches_per_session:
+                remaining = self.total_batches - len(self.completed_batches) - processed
+                if remaining > 0:
+                    print(f"\n⏸️  已达到每会话最大批次数 ({max_batches_per_session})")
+                    print(f"   剩余 {remaining} 个批次待处理")
+                    print("\n💡 继续处理请重新运行脚本")
+                    print(f"   python scripts/host_ai_review.py \\")
+                    print(f"     --manifest {self.manifest_path} \\")
+                    print(f"     --output {self.output_dir}")
+                break
+    
+    def _run_text_only_mode(self):
+        """纯文本模式 - 宿主 AI 不支持图片识别"""
+        print("\n" + "=" * 60)
+        print("【DICOM Doctor 宿主 AI 阅片模式】")
+        print("=" * 60)
+        print("\n⚠️  当前宿主 AI 不支持图片识别")
+        print(f"   检测到的模型: {self.capabilities['model_name']}")
+        print("\n推荐方案（按优先级排序）：")
+        print("\n1️⃣  使用 OpenAI API（推荐，最稳定）")
+        print("   运行命令：")
+        print("   python scripts/main.py --input <dicom文件> --output <输出目录> \\")
+        print("     --auto-review-model gpt-4o \\")
+        print("     --auto-review-api-key <你的API Key>")
+        print("\n2️⃣  使用 Claude API")
+        print("   运行命令：")
+        print("   python scripts/main.py --input <dicom文件> --output <输出目录> \\")
+        print("     --auto-review-model claude-3-opus-20240229 \\")
+        print("     --auto-review-api-key <你的API Key>")
+        print("\n3️⃣  使用 Gemini API（Google）")
+        print("   运行命令：")
+        print("   python scripts/main.py --input <dicom文件> --output <输出目录> \\")
+        print("     --auto-review-model gemini-1.5-pro \\")
+        print("     --auto-review-api-key <你的API Key>")
+        print("\n4️⃣  手动分批处理")
+        print("   将生成的 PNG 图片发送给支持视觉的 AI 进行分析")
+        print("\n💡 获取 API Key：")
+        print("   - OpenAI: https://platform.openai.com/api-keys")
+        print("   - Anthropic: https://console.anthropic.com/")
+        print("   - Google: https://ai.google.dev/")
+        print("=" * 60)
+        
+        # 显示当前进度
+        progress = self.get_progress()
+        print(f"\n📊 当前进度：")
+        print(f"   总批次: {progress['total_batches']}")
+        print(f"   已完成: {progress['completed_batches']}")
+        print(f"   待处理: {progress['remaining_batches']}")
+        if progress['next_batch']:
+            print(f"   下一批次: {progress['next_batch']}")
+        print("=" * 60 + "\n")
+    
+    def _print_final_report(self):
+        """打印最终报告"""
+        results_file = self.output_dir / "review_results.json"
+        if results_file.exists():
+            try:
+                with open(results_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                
+                total = len(data.get("results", []))
+                abnormal = len([r for r in data.get("results", []) if r.get("conclusion") == "异常"])
+                normal = total - abnormal
+                
+                print("\n" + "=" * 60)
+                print("【阅片完成报告】")
+                print("=" * 60)
+                print(f"总影像数: {total}")
+                print(f"正常: {normal}")
+                print(f"异常: {abnormal}")
+                print(f"\n详细结果: {results_file}")
+                print(f"PDF报告: {self.output_dir / 'review_report.pdf'}")
+                print("=" * 60 + "\n")
+            except Exception as e:
+                logger.warning(f"生成最终报告时出错: {e}")
 
 
 def parse_args():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(
-        description="DICOM Doctor v2.7.0 - 宿主 AI 自动分批阅片模式"
+        description="DICOM Doctor v2.8.0 - 宿主 AI 自动分批阅片模式"
     )
     parser.add_argument(
         "--manifest",

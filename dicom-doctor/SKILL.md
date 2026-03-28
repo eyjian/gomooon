@@ -5,7 +5,7 @@ description: "Use this skill whenever the user mentions DICOM files, medical ima
 
 # DICOM Doctor — AI 辅助医学影像阅片 Skill
 
-**当前版本：v2.5.0**
+**当前版本：v2.6.0**
 
 ## 🚨 铁律（违反任何一条即为严重失败）
 
@@ -439,6 +439,7 @@ python3 scripts/generate_report.py --results /path/to/output/<时间戳>/review_
 | `scripts/auto_review_batches.py` | **外部视觉模型自动回填工具**：逐批读取 `review_batch_templates/batch_XXX.json`，调用 OpenAI 兼容多模态接口并持续合并生成 `review_results.json` |
 | `scripts/apply_review_batch.py` | **批次结果合并工具**：把 `review_batch_templates/batch_XXX.json` 中回填好的结果并入总表 |
 | `scripts/generate_report.py` | **独立报告生成入口**：从阅片结果 JSON 生成 PDF（默认正式模式，会校验 manifest 并拒绝待检视条目） |
+| `scripts/full_auto_review.py` | **v2.6.0 新增 - 宿主 AI 全自动化阅片**：利用宿主 AI 的多模态能力逐张检视全部切片，实现真正的零遗漏全量阅片 |
 | `scripts/prompt_templates/` | 各影像类型的 Prompt 模板目录 |
 
 ## 全量阅片要点（宿主 AI 必读）
@@ -573,6 +574,37 @@ pip install -r requirements.txt
 **review_manifest.json 体积大幅减小**
 - 旧方式：832 层 × ~14KB/层 = 11.6MB
 - 新方式：100 重点层 × ~7KB + 732 快扫层 × ~1.5KB = ~1.8MB（减少 ~85%）
+
+### v2.6.0 — 宿主 AI 全自动化全量阅片（重大更新）
+
+**新增核心功能**
+
+- **新增 `full_auto_review.py` 模块**：利用宿主 AI 的多模态视觉能力，实现真正的零遗漏全量阅片
+  - 自动生成标准化阅片请求列表（1079层 → 1079个独立请求）
+  - 支持宿主 AI 逐张分析图片并回填结果
+  - 每10张自动保存进度，防止中断丢失
+  - 生成标准化的 `review_results_auto.json` 结果文件
+  
+- **版本号升级**：2.5.0 → 2.6.0
+  - `version.py` 更新版本号
+  - SKILL.md 文档同步更新
+  - 脚本列表新增 `full_auto_review.py` 说明
+
+**技术改进**
+
+- 解决了手动逐批阅片耗时过长的问题（72批次 × 15张 = 1079张）
+- 保持了 dicom-doctor 的铁律要求：逐层确认、零遗漏、全量阅片
+- 兼容现有 `generate_report.py` 报告生成流程
+
+**使用方式**
+
+```bash
+# 生成全量阅片请求
+python3 scripts/full_auto_review.py --manifest <path>/review_manifest.json --output <output_dir>
+
+# 宿主 AI 逐张处理请求后，生成报告
+python3 scripts/generate_report.py --results <output_dir>/review_results_auto.json --manifest <path>/review_manifest.json ...
+```
 
 ### v2.4.6 — 结节聚合正则修复（兼容 第N/M层 格式）
 

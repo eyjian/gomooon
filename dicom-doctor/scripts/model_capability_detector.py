@@ -1,22 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-DICOM Doctor v2.9.0 - 宿主 AI 能力检测模块
+DICOM Doctor v2.10.0 - 宿主 AI 能力检测模块
 
 检测当前宿主 AI 是否支持：
 1. 图片识别（多模态）
 2. 长文本处理
 3. JSON 格式输出
 
-设计原则（v2.9.0 重要变更）：
-  - SKILL.md 已明确要求使用多模态视觉模型，因此当无法确定模型能力时，
-    **默认假定支持视觉**（乐观策略），而非保守地假定不支持。
-  - 保守策略会导致宿主 AI 被错误引导到"纯文本模式"，进而放弃阅片，
-    这比乐观策略的风险（尝试阅片后发现不支持再降级）更严重。
+设计原则（v2.10.0 重要变更）：
+  - 采用    这比乐观策略的风险（尝试阅片后发现不支持再降级）更严重。
   - 新增 detect_from_model_name() 方法，支持从 --model-name 参数直接检测。
+  - v2.10.0: 移除不可靠的环境变量推断（如 GLM_API_KEY → glm-model 误判），
+    新增「先试后判」视觉探测机制。
 
 作者: AI Assistant
-版本: 2.9.0
+版本: 2.10.0
 日期: 2026-03-28
 """
 
@@ -164,25 +163,24 @@ class ModelCapabilityDetector:
     
     @classmethod
     def _infer_from_context(cls) -> str:
-        """从上下文推断模型类型"""
-        # 检查是否有特定的视觉模型标志
+        """
+        从上下文推断模型类型。
+        
+        v2.10.0 重要变更：
+          - 移除了基于 GLM_API_KEY/ZHIPU_API_KEY 等环境变量推断模型的逻辑。
+            这些环境变量可能是用户之前配置的历史残留，与当前实际运行的
+            宿主 AI 模型无关。例如用户环境中有 ZHIPU_API_KEY（之前用过智谱），
+            但当前实际使用的是 Kimi-K2.5，会被错误推断为 GLM 模型。
+          - 仅保留明确的视觉能力标志检测。
+        """
+        # 检查是否有明确的视觉能力标志
         if os.environ.get("VISION_ENABLED") == "true":
             return "vision-capable-model"
         
-        # 检查是否有 GLM 相关环境变量
-        if os.environ.get("GLM_API_KEY") or os.environ.get("ZHIPU_API_KEY"):
-            return "glm-model"
-        
-        # 检查运行的进程或库
-        try:
-            import importlib.util
-            # 检查是否导入了多模态相关的库
-            vision_libs = ["pillow", "cv2", "opencv-python"]
-            for lib in vision_libs:
-                if importlib.util.find_spec(lib):
-                    return "potentially-vision-capable"
-        except:
-            pass
+        # v2.10.0: 不再从 API Key 类环境变量推断模型类型
+        # 原因：API Key 环境变量（如 GLM_API_KEY、ZHIPU_API_KEY）可能是
+        # 历史残留，与当前宿主 AI 的实际模型无关，极易导致误判。
+        # 例如：实际使用 Kimi-K2.5，但因为有 ZHIPU_API_KEY 被误判为 GLM。
         
         return None
     
@@ -191,7 +189,7 @@ class ModelCapabilityDetector:
         """
         检查模型是否支持视觉。
         
-        v2.9.0 变更：对于未知模型，默认假定支持视觉（乐观策略）。
+        v2.10.0 变更：对于未知模型，默认假定支持视觉（乐观策略）。
         只有明确在 TEXT_ONLY_MODELS 列表中的模型才返回 False。
         """
         model_lower = model_name.lower()
@@ -219,7 +217,7 @@ class ModelCapabilityDetector:
         """
         检查模型是否支持长上下文。
         
-        v2.9.0: 2024-2026 年的主流模型基本都支持 128K+ 上下文，
+        v2.10.0: 2024-2026 年的主流模型基本都支持 128K+ 上下文，
         默认返回 True。
         """
         # 现代模型（2024+）基本都支持长上下文，默认 True
@@ -242,6 +240,11 @@ def detect_host_ai_capabilities(model_name: str = None) -> Dict[str, Any]:
     """
     便捷的检测函数。
     
+    v2.10.0 检测优先级：
+      1. --model-name 参数（最可靠）
+      2. 环境变量（仅作辅助参考，不再推断 API Key 类变量）
+      3. 默认乐观策略（假定支持视觉）
+    
     Args:
         model_name: 可选的模型名称（如通过 --model-name 传入）。
                     提供时优先使用，比环境变量检测更可靠。
@@ -253,6 +256,56 @@ def detect_host_ai_capabilities(model_name: str = None) -> Dict[str, Any]:
     if model_name:
         return detector.detect_from_model_name(model_name)
     return detector.detect_from_env()
+
+
+def generate_vision_probe_prompt(test_image_path: str) -> str:
+    """
+    生成视觉能力探测提示。
+    
+    宿主 AI 在阅片前应调用此函数，尝试读取一张测试图片。
+    如果能成功读取并描述图片内容，说明支持视觉能力。
+    
+    Args:
+        test_image_path: 测试图片的绝对路径
+    
+    Returns:
+        探测提示字符串
+    """
+    return (
+        f"【视觉能力探测】\n"
+        f"请尝试读取以下图片并简要描述你看到的内容（1-2句话即可）：\n"
+        f"图片路径: {test_image_path}\n\n"
+        f"如果你能看到并描述图片内容，说明你支持视觉能力，可以继续阅片。\n"
+        f"如果你无法读取图片，请回复'无法读取图片'。"
+    )
+
+
+def find_probe_image(output_dir: str) -> str:
+    """
+    在输出目录中找到一张可用于视觉探测的测试图片。
+    
+    优先选择 lung/ 子目录下的第一张 PNG 图片。
+    
+    Args:
+        output_dir: 输出目录路径
+    
+    Returns:
+        测试图片的绝对路径，如果找不到则返回空字符串
+    """
+    from pathlib import Path
+    
+    output_path = Path(output_dir)
+    
+    # 按优先级搜索
+    search_dirs = ["png/lung", "png/ggo", "png/mediastinum", "png"]
+    for sub_dir in search_dirs:
+        target = output_path / sub_dir
+        if target.exists():
+            pngs = sorted(target.glob("*.png"))
+            if pngs:
+                return str(pngs[0])
+    
+    return ""
 
 
 def print_capability_report() -> Dict[str, Any]:

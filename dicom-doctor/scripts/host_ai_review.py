@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-DICOM Doctor v2.9.0 - 宿主 AI 自动分批处理模式
+DICOM Doctor v2.10.0 - 宿主 AI 自动分批处理模式
 
 当没有 OpenAI API Key 时，自动切换到宿主 AI 模式：
 1. 自动检测宿主 AI 能力（是否支持图片识别）
@@ -11,10 +11,11 @@ DICOM Doctor v2.9.0 - 宿主 AI 自动分批处理模式
 5. 每批完成后自动合并到总表 review_results.json
 6. 支持断点续跑
 
-v2.9.0 重要变更：
-  - 能力检测默认采用乐观策略（假定支持视觉）
-  - 支持从 --model-name 参数直接检测模型能力
-  - 纯文本模式下给出更清晰的指引
+v2.10.0 重要变更：
+  - 新增「先试后判」视觉探测机制：不再仅依赖环境变量推断，
+    而是直接尝试读取一张测试图片来验证视觉能力
+  - 任务开始时先确认模型身份，避免环境变量误判
+  - 移除了不可靠的 GLM_API_KEY 等环境变量推断逻辑
 
 作者: AI Assistant
 版本: 2.9.0
@@ -48,7 +49,7 @@ class HostAIReviewer:
     3. 自动保存进度和合并结果
     """
     
-    VERSION = "2.9.0"
+    VERSION = "2.10.0"
     
     def __init__(self, manifest_path: str, output_dir: str, batch_size: int = 15,
                  model_name: str = None):
@@ -96,9 +97,10 @@ class HostAIReviewer:
         """
         检测宿主 AI 能力。
         
-        v2.9.0 变更：
+        v2.10.0 变更：
           - 支持从 model_name 参数直接检测
           - 默认采用乐观策略（假定支持视觉）
+          - 移除了不可靠的环境变量推断
         """
         try:
             # 尝试导入检测模块
@@ -107,7 +109,7 @@ class HostAIReviewer:
             return detect_host_ai_capabilities(model_name=self.model_name)
         except ImportError:
             logger.warning("未找到模型能力检测模块，默认假定支持视觉")
-            # v2.9.0: 默认乐观策略，假定支持视觉
+            # v2.10.0: 默认乐观策略，假定支持视觉
             return {
                 "model_name": self.model_name or "unknown",
                 "supports_vision": True,
@@ -115,7 +117,7 @@ class HostAIReviewer:
                 "confidence": "low",
                 "note": (
                     "未安装能力检测模块。根据 SKILL.md 要求（必须使用多模态视觉模型），"
-                    "默认假定当前模型支持视觉能力。如果实际不支持，阅片时会自动降级处理。"
+                    "默认假定当前模型支持视觉能力。将通过实际读取图片来验证。"
                 ),
             }
     
@@ -289,16 +291,96 @@ class HostAIReviewer:
         return None
     
     def run_interactive(self):
-        """交互式运行 - 智能分流处理"""
+        """
+        交互式运行 - 智能分流处理。
+        
+        v2.10.0 变更：
+          - 新增视觉探测步骤：先尝试读取一张测试图片，
+            根据实际结果决定是否进入视觉模式
+          - 不再仅依赖环境变量检测结果
+        """
         # 首先打印能力检测报告
         self.print_capability_report()
         
+        # v2.10.0: 新增视觉探测步骤
+        self._print_vision_probe_hint()
+        
         # 根据能力选择处理模式
+        # 注意：即使检测结果说不支持视觉，也优先尝试视觉模式
+        # 因为检测可能不准确（如环境变量误判）
         if self.capabilities['supports_vision']:
             self._run_vision_mode()
         else:
-            self._run_text_only_mode()
+            # 即使检测说不支持，也先提示宿主 AI 尝试读图
+            self._run_probe_then_decide()
     
+    def _print_vision_probe_hint(self):
+        """
+        v2.10.0 新增：打印视觉探测提示。
+        
+        在能力检测报告之后，提示宿主 AI 尝试读取一张测试图片来验证视觉能力。
+        这比仅依赖环境变量推断更可靠。
+        """
+        try:
+            sys.path.insert(0, str(Path(__file__).parent))
+            from model_capability_detector import find_probe_image, generate_vision_probe_prompt
+            
+            probe_image = find_probe_image(str(self.output_dir))
+            if probe_image:
+                print("\n" + "-" * 60)
+                print("【视觉能力探测】")
+                print("-" * 60)
+                print(f"为确保检测结果准确，请尝试读取以下测试图片：")
+                print(f"  {probe_image}")
+                print(f"")
+                print(f"如果你能看到图片内容 → 直接开始阅片")
+                print(f"如果无法读取图片 → 需要使用外部视觉 API")
+                print("-" * 60 + "\n")
+            else:
+                print("\n⚠️  未找到可用的测试图片，跳过视觉探测\n")
+        except ImportError:
+            pass
+    
+    def _run_probe_then_decide(self):
+        """
+        v2.10.0 新增：「先试后判」模式。
+        
+        当检测结果说不支持视觉时，不是直接停下来，
+        而是提示宿主 AI 先尝试读取一张图片：
+        - 如果能读取 → 说明检测误判，直接进入视觉模式
+        - 如果确实不能读取 → 再给出替代方案
+        """
+        print("\n" + "=" * 60)
+        print("【DICOM Doctor 宿主 AI 阅片模式】")
+        print("=" * 60)
+        print(f"\n⚠️  能力检测结果：当前模型可能不支持图片识别")
+        print(f"   检测到的模型: {self.capabilities['model_name']}")
+        print(f"")
+        print(f"💡 但检测可能不准确！请先尝试读取一张图片来验证：")
+        
+        # 找一张测试图片
+        try:
+            from model_capability_detector import find_probe_image
+            probe_image = find_probe_image(str(self.output_dir))
+            if probe_image:
+                print(f"")
+                print(f"   🖼️  测试图片: {probe_image}")
+                print(f"")
+                print(f"   ✅ 如果你能看到并描述图片内容 → 忽略检测结果，直接按流程阅片")
+                print(f"   ❌ 如果确实无法读取图片 → 请使用以下替代方案")
+            else:
+                print(f"")
+                print(f"   未找到测试图片，请直接尝试读取阅片批次中的第一张图片")
+        except ImportError:
+            pass
+        
+        print(f"")
+        print(f"{'=' * 60}")
+        print(f"")
+        
+        # 然后给出替代方案（但不是停下来，而是作为备选）
+        self._run_text_only_mode()
+
     def _run_vision_mode(self):
         """视觉模式 - 宿主 AI 支持图片识别"""
         print("\n" + "=" * 60)
@@ -360,9 +442,10 @@ class HostAIReviewer:
         """
         纯文本模式 - 宿主 AI 被检测为不支持图片识别。
         
-        v2.9.0 优化：
+        v2.10.0 优化：
           - 明确告知宿主 AI 检测可能有误，如果实际支持视觉可忽略此检测
           - 提供更清晰的操作指引
+          - 强调「先试后判」：先尝试读图，确实不行再停下来
         """
         print("\n" + "=" * 60)
         print("【DICOM Doctor 宿主 AI 阅片模式】")
@@ -435,7 +518,7 @@ class HostAIReviewer:
 def parse_args():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(
-        description="DICOM Doctor v2.9.0 - 宿主 AI 自动分批阅片模式"
+    description="DICOM Doctor v2.10.0 - 宿主 AI 自动分批阅片模式"
     )
     parser.add_argument(
         "--manifest",

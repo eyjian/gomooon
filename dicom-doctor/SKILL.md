@@ -5,7 +5,7 @@ description: "Use this skill whenever the user mentions DICOM files, medical ima
 
 # DICOM Doctor — AI 辅助医学影像阅片 Skill
 
-**当前版本：v2.9.0**
+**当前版本：v2.10.0**
 
 ## 🚨 铁律（违反任何一条即为严重失败）
 
@@ -55,13 +55,13 @@ description: "Use this skill whenever the user mentions DICOM files, medical ima
     - 连续2层以上出现的局灶性密度增高 → 必须报告
     - 孤立圆形高密度影 → 即使只在1层出现也必须报告（可标注"仅单层可见，需随访确认"）
     - **"更像血管"不等于"是血管"**——不确定就报异常，让医生判断
-11. **禁止因能力检测结果而放弃阅片**：`model_capability_detector.py` 的检测结果仅供参考。如果检测报告说"不支持视觉"，但你（宿主 AI）实际上能够读取和理解图片，**必须忽略检测结果，直接按流程阅片**。能力检测可能因环境变量缺失、模型名称未识别等原因产生误判。**以下行为严格禁止**：
+11. **禁止因能力检测结果而放弃阅片**：`model_capability_detector.py` 的检测结果仅供参考。如果检测报告说"不支持视觉"，但你（宿主 AI）实际上能够读取和理解图片，**必须忽略检测结果，直接按流程阅片**。能力检测可能因环境变量缺失、模型名称未识别、或环境变量残留误判（如有 ZHIPU_API_KEY 但实际用的是 Kimi）等原因产生误判。**以下行为严格禁止**：
     - 因为检测报告说"不支持视觉"就停止阅片流程
     - 因为检测报告说"不支持视觉"就向用户推荐使用外部 API
     - 因为检测报告与实际能力矛盾就暂停询问用户
     - 在阅片过程中提及"检测到不支持视觉"的矛盾
     
-    **正确做法**：无论检测结果如何，直接尝试读取图片并阅片。如果确实无法读取图片（工具报错），再按纯文本模式处理。
+    **正确做法（v2.10.0 「先试后判」策略）**：无论检测结果如何，直接尝试读取图片并阅片。如果确实无法读取图片（工具报错），再按纯文本模式处理。
 
 DICOM Doctor 是一个 AI 辅助医学影像处理 skill，提供两项核心能力：
 
@@ -145,6 +145,22 @@ sudo yum install -y python3 python3-pip
 ```
 
 > **安装完成后**，重新执行 `python --version` 或 `python3 --version` 验证，确认 >= 3.8 后再进入第 1 步。如果安装失败（比如用户没有管理员权限），在输出中说明情况并建议用户手动安装，但**不要反复询问**。
+
+### 第 0.5 步：确认模型身份（任务开始时自动执行）
+
+> **v2.10.0 新增**：任务开始时，宿主 AI 必须先确认自己的实际模型名称，并通过 `--model-name` 参数传入。这避免了环境变量误判（如实际用 Kimi 但被误判为 GLM）。
+
+宿主 AI 应在执行第 1 步之前，自行确认当前模型名称（通常可从系统提示或自身元数据中获取），并在第 1 步的命令中通过 `--model-name` 参数传入。例如：
+
+```bash
+# 宿主 AI 是 Kimi-K2.5
+python <skill_path>/scripts/run.py --input <DICOM路径> --workspace <工作区> --model-name kimi-k2.5 --strict-review
+
+# 宿主 AI 是 Claude-4.6-Opus
+python <skill_path>/scripts/run.py --input <DICOM路径> --workspace <工作区> --model-name claude-4.6-opus --strict-review
+```
+
+**为什么这很重要**：环境变量（如 `GLM_API_KEY`、`ZHIPU_API_KEY`）可能是用户之前配置的历史残留，与当前实际运行的模型无关。如果不传入 `--model-name`，检测器可能从这些环境变量误判模型类型。
 
 ### 第 1 步：运行 run.py（自动创建输出目录并启动 main.py）
 
@@ -487,8 +503,8 @@ python3 scripts/host_ai_review.py --manifest /path/to/output/<时间戳>/review_
 | `scripts/apply_review_batch.py` | **批次结果合并工具**：把 `review_batch_templates/batch_XXX.json` 中回填好的结果并入总表 |
 | `scripts/generate_report.py` | **独立报告生成入口**：从阅片结果 JSON 生成 PDF（默认正式模式，会校验 manifest 并拒绝待检视条目） |
 | `scripts/full_auto_review.py` | **v2.6.0 新增 - 宿主 AI 全自动化阅片**：利用宿主 AI 的多模态能力逐张检视全部切片，实现真正的零遗漏全量阅片 |
-| `scripts/host_ai_review.py` | **v2.9.0 改进 - 宿主 AI 分批处理模式**：自动检测宿主 AI 能力，智能分流处理。支持视觉则自动连续处理，不支持则给出清晰的 API 替代方案。支持 `--model-name` 参数提高检测准确性 |
-| `scripts/model_capability_detector.py` | **v2.9.0 改进 - 模型能力检测模块**：自动检测宿主 AI 是否支持图片识别。v2.9.0 采用乐观策略（未知模型默认假定支持视觉），支持从 `--model-name` 参数直接检测，大幅降低误判率 |
+| `scripts/host_ai_review.py` | **v2.10.0 改进 - 宿主 AI 分批处理模式**：自动检测宿主 AI 能力，智能分流处理。新增「先试后判」视觉探测机制：先尝试读取测试图片，确实不行再降级。支持 `--model-name` 参数提高检测准确性 |
+| `scripts/model_capability_detector.py` | **v2.10.0 改进 - 模型能力检测模块**：移除了不可靠的环境变量推断（如 GLM_API_KEY 误判），新增 `generate_vision_probe_prompt()` 和 `find_probe_image()` 视觉探测函数，支持「先试后判」策略 |
 | `scripts/prompt_templates/` | 各影像类型的 Prompt 模板目录 |
 
 ## 全量阅片要点（宿主 AI 必读）
@@ -521,8 +537,8 @@ python3 scripts/host_ai_review.py --manifest /path/to/output/<时间戳>/review_
 > 📖 详细的工作流程、使用示例、输出结构和注意事项，参见 `references/host_ai_mode.md`
 
 **关键提醒**：
-- 🚨 模型能力检测可能不准确，检测误判不是停止阅片的理由。v2.9.0 已改为乐观策略（默认假定支持视觉）
-- 宿主 AI 必须传入 `--model-name` 参数以提高检测准确性
+- 🚨 模型能力检测可能不准确（如环境变量残留导致误判），检测误判不是停止阅片的理由。v2.10.0 新增「先试后判」机制：先尝试读取测试图片，确实不行再降级
+- 宿主 AI 必须传入 `--model-name` 参数以避免环境变量误判
 
 ## 内置资源
 
@@ -532,7 +548,7 @@ python3 scripts/host_ai_review.py --manifest /path/to/output/<时间戳>/review_
 | `references/AI_chest_CT_report_template.pdf` | 胸部 CT 报告模板参考（**PDF 报告必须参照此格式**） |
 | `references/review_strategy.md` | 详细的全量阅片策略指南（三阶段法） |
 | `references/host_ai_mode.md` | 宿主 AI 分批处理模式详细说明（工作流程、使用示例、输出结构、注意事项） |
-| `references/changelog.md` | 完整版本历史（v2.4.0 ~ v2.9.0 全部变更记录） |
+| `references/changelog.md` | 完整版本历史（v2.4.0 ~ v2.10.0 全部变更记录） |
 
 ## 自修复能力
 
@@ -574,6 +590,7 @@ pip install -r requirements.txt
 > 📖 完整版本历史见 `references/changelog.md`
 
 **最近版本摘要：**
+- **v2.10.0** — 「先试后判」视觉探测机制 + 移除环境变量误判 + 任务开始时确认模型身份
 - **v2.9.0** — 模型能力检测乐观策略优化（默认假定支持视觉，新增 `detect_from_model_name()`）
 - **v2.8.0** — 模型能力自动检测 + 智能分流处理
 - **v2.7.0** — 宿主 AI 分批处理模式（无需 API Key）

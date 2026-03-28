@@ -5,13 +5,17 @@ description: "Use this skill whenever the user mentions DICOM files, medical ima
 
 # DICOM Doctor — AI 辅助医学影像阅片 Skill
 
-**当前版本：v2.6.0**
+**当前版本：v2.7.0**
 
 ## 🚨 铁律（违反任何一条即为严重失败）
 
 > 以下规则对阅片质量和患者安全至关重要。宿主 AI 必须逐条遵守，不得以任何理由违反。
 
 1. **逐层确认式全量阅片，零遗漏**：必须逐张检视**全部** PNG 切片，**每一层都必须输出明确结论**（正常/异常/无法识别），不得以任何方式跳过或简化。3mm 结节仅出现在约 3 层中，跳过即漏诊。**严格禁止**：抽样、跳过、拼图（Collage）、以任何理由降级为部分阅片。
+   
+   **必须使用分批持久化机制**：`run.py` 已自动生成 `review_batch_templates/batch_XXX.json` 批次模板。宿主 AI **必须**基于这些模板逐批阅片，每完成一批立即调用 `apply_review_batch.py` 持久化到磁盘。**禁止**绕过批次模板自行构建 `review_results.json`。这确保：(a) 会话中断可断点续跑；(b) 结果与 manifest 交叉校验无遗漏。
+   
+   **严禁模板填充/批量伪造**：每张切片的结论必须基于**实际读取并检视该图片**后得出。禁止按解剖位置套用模板描述、禁止用 Python 脚本批量生成"正常"结论、禁止对未读取的图片输出任何结论。
 2. **PNG 必须保存到 png/ 子目录**：运行 `main.py` 后，PNG 文件输出在 `<output_dir>/<时间戳>/png/` 下。必须验证该目录存在且包含文件。
 3. **必须生成 PDF 报告（对标模板，不得省略）**：最终**必须**在输出目录中生成 `.pdf` 格式的医院风格影像检查报告。报告格式**必须严格对标** `references/AI_chest_CT_report_template.pdf` 模板，包含：检查信息表、AI 检视统计、检查所见（逐条异常发现）、异常影像详情（嵌入图片+描述+分级）、诊断意见、随访建议、分级参考表、免责声明。**如果最终输出目录中不存在 .pdf 文件，则本次任务判定为失败。**
 4. **立即执行，不得确认或中途停止**：收到用户指令后，**直接开始执行第 1 步（运行 main.py）**，禁止在开始前插入任何形式的确认环节。以下行为**全部禁止**：
@@ -21,7 +25,7 @@ description: "Use this skill whenever the user mentions DICOM files, medical ima
    - 复述用户的输入路径、姓名、系统环境后请求用户确认
    - 中途暂停询问"是否继续""需要我继续吗"
    - **提供"方案A/方案B"让用户选择**——这本质上是变相暂停，同样禁止
-   - **以"切片数量太多""窗位质量差""narrow_ggo 过曝"等为由暂停或降级**——不管数据量有多大、某个窗位看起来多差，流程都必须跑完，问题记录到报告中即可
+   - **以"切片数量太多""窗位质量差""narrow_ggo 过曝"等为由暂停或降级**——不管数据量有多大、某个窗位看起来多差，流程都必须跑完，问题记录到报告中即可。**数据量大不是暂停的理由**——第 3 步的分批持久化机制已确保即使上下文耗尽也能断点续跑
    
    **唯一例外**：输入文件路径确实不存在（文件系统报错），才可以询问用户。其他一切情况，直接开始干活。
 5. **GGO 窗优先**：胸部 CT 阅片时，每批切片必须先独立检视**高灵敏度 GGO 窗**（`narrow_ggo/` 子目录），再检视 GGO 窗（`ggo/` 子目录），然后检视肺窗和纵隔窗。极淡的纯磨玻璃结节可能**只有在高灵敏度 GGO 窗**下才能看到。
@@ -168,28 +172,62 @@ python <skill_path>/scripts/run.py --input <用户提供的DICOM路径> --worksp
 > - 这使得 prompt 总 token 消耗降低约 50-70%，大幅缓解上下文窗口耗尽问题
 > - **宿主 AI 仍需逐张检视全部图片**，快扫层只是 prompt 更简洁，检视精度要求不变
 
-阅片流程：
-1. 列出所有需要检视的 PNG 文件（按 lung/ 子目录中的文件列表）
-2. 计算总数 N，按每批 15-20 张分批。**必须在开始时公布总数 N 和预计批次数**
-3. 对每个批次：
-   a. **首先**独立检视该批次的高灵敏度 GGO 窗图片（`narrow_ggo/` 子目录中同名文件）——检测极淡的纯磨玻璃结节
-   b. **然后**独立检视该批次的 GGO 窗图片（`ggo/` 子目录中同名文件）——寻找磨玻璃结节
-   c. **再**检视肺窗图片（`lung/` 子目录）——寻找实性结节、肿块
-   d. **同时**参考纵隔窗图片（`mediastinum/` 子目录）——验证结节密度、检查淋巴结
-   e. **为每张图片输出 JSON 格式的分析结论**（结论字段不能为空）
-   f. 批次完成后**报告进度**："已完成第 M/N 批，累计检视 X/Y 张"
-4. **必须循环直到最后一张图片都检视完毕**，然后进入汇总
+#### 🔧 分批持久化机制（强制使用，不可跳过）
 
-**阅片红线（违反即严重医疗失误，任务判定失败）：**
+`run.py` 执行完成后，已在输出目录自动生成以下文件：
+- `review_batch_templates/batch_001.json` ~ `batch_NNN.json`：按每批 15 张预拆好的阅片模板，每个 item 含完整 prompt + 多窗位图片路径
+- `review_manifest.json`：总清单
+- `review_results_stub.json`：占位总表（全部初始化为"待检视"）
+
+**宿主 AI 必须基于这些批次模板进行全量阅片，每完成一批立即持久化到磁盘。** 这确保：
+1. **断点续跑**：即使上下文耗尽或会话中断，已完成的批次不会丢失，下次会话可从断点继续
+2. **全量可验证**：`apply_review_batch.py` 会校验每批结果与 manifest 的一致性，杜绝遗漏
+3. **跨模型通用**：任何模型都使用相同的持久化流程，不依赖单次会话的上下文容量
+
+#### 阅片流程（逐批循环，持久化驱动）
+
+1. **读取批次模板**：从 `review_batch_templates/` 目录加载当前批次的 `batch_XXX.json`
+2. **逐张检视该批次的全部图片**：
+   a. 读取该 item 的多窗位图片（按优先级：narrow_ggo → ggo → lung → mediastinum）
+   b. 根据 item 中的 prompt 完成阅片分析
+   c. 将分析结论填入该 item 的 `result` 字段（JSON 格式，含 conclusion/abnormality_desc/confidence/details/location 等）
+3. **持久化该批次**：将回填好的批次 JSON 保存到 `review_batch_filled/batch_XXX.filled.json`
+4. **合并到总表**：运行 `apply_review_batch.py` 将该批结果并入 `review_results.json`
+   ```bash
+   python3 <skill_path>/scripts/apply_review_batch.py \
+     --manifest <输出目录>/<时间戳>/review_manifest.json \
+     --results <输出目录>/<时间戳>/review_results.json \
+     --batch-json <输出目录>/<时间戳>/review_batch_filled/batch_XXX.filled.json
+   ```
+   > 首次合并时，`--results` 传 `review_results_stub.json`（占位总表）；后续传已生成的 `review_results.json`
+5. **报告进度**："已完成第 M/N 批，累计检视 X/Y 张，已持久化到磁盘"
+6. **循环回到步骤 1**，直到全部批次完成
+
+#### ⚠️ 会话中断时的续跑机制
+
+如果上下文即将耗尽或会话因任何原因中断：
+- **已完成的批次**已持久化在 `review_batch_filled/` 目录和 `review_results.json` 中，**不会丢失**
+- **下次会话**加载 skill 后，宿主 AI 应：
+  1. 检查 `review_batch_filled/` 中已有哪些 `.filled.json`
+  2. 对比 `review_batch_templates/` 中的总批次数，确定剩余未完成的批次
+  3. 从第一个未完成的批次继续，重复上述流程
+- **禁止从头重跑已完成的批次**，除非用户明确要求
+
+#### 阅片红线（违反即严重医疗失误，任务判定失败）
+
 - ❌ **严禁抽样**：禁止只看几张代表性切片
 - ❌ **严禁拼图**：禁止将多张切片缩小拼接成一张（Collage）
 - ❌ **严禁跳层**：禁止以"层面正常""已到达腹部区域"等理由跳过剩余层面
 - ❌ 禁止中途停下来问"需要我继续检视剩余图片吗？"
 - ❌ **严禁方案选择式暂停**：禁止在阅片过程中向用户提供"方案A/方案B"或"两个选项"让用户决策。遇到任何技术问题（窗位质量差、数据量大、图片过曝等），AI 必须自行按降级策略处理并继续，不得暂停
-- ❌ **严禁以数据量为由降级**：无论切片数量是 100 还是 1000+、窗位组合产生多少张图片，都必须按流程全量跑完。担心"会话太长""token 不够"不是停下来的理由
-- ✅ 必须每批 15-20 张，循环直到最后一张
-- ✅ 每张图片都要输出明确结论（正常/异常/无法识别）
+- ❌ **严禁以数据量为由降级**：无论切片数量是 100 还是 1000+、窗位组合产生多少张图片，都必须按流程全量跑完。担心"会话太长""token 不够"不是停下来的理由——**已有分批持久化机制保障断点续跑**
+- ❌ **严禁模板填充**：禁止不读取图片就批量生成阅片结论。每张切片的 conclusion 必须基于实际读取并检视该图片后得出，禁止按解剖位置套模板、禁止用 Python 脚本批量填充正常结论
+- ❌ **严禁绕过持久化机制**：禁止跳过 `batch_templates` 和 `apply_review_batch.py`，自行构建 `review_results.json`。必须使用 skill 提供的分批持久化工具链
+- ✅ 必须使用 `review_batch_templates/` 中的批次模板逐批推进
+- ✅ 每完成一批必须调用 `apply_review_batch.py` 持久化到磁盘
+- ✅ 每张图片都要实际读取并输出明确结论（正常/异常/无法识别）
 - ✅ 遇到窗位质量问题时，自行降级处理并在报告中注明
+- ✅ 会话中断后，从断点续跑而非从头开始
 
 > 📖 详细的三阶段阅片策略和禁止行为清单，参见 `references/review_strategy.md`
 
@@ -223,27 +261,19 @@ python <skill_path>/scripts/run.py --input <用户提供的DICOM路径> --worksp
 > **❌ 严禁**只输出逐层明细而省略结节汇总——结节汇总是临床医生快速评估的核心信息。
 > **✅ 两者都必须完整输出**，先结节汇总表，再逐层异常明细列表。
 
-### 第 5 步：保存阅片结果到 JSON 文件
+### 第 5 步：确认阅片结果完整性
 
-全量阅片完成后，将所有阅片结果保存为 JSON 文件，格式如下：
+如果第 3 步的分批持久化流程已全部完成，`review_results.json` 应已由 `apply_review_batch.py` 逐批合并生成，位于 `<输出目录>/<时间戳>/review_results.json`。
 
-```bash
-# 在输出目录的时间戳子目录下保存
-REVIEW_RESULTS_JSON="$OUTPUT_DIR/<时间戳>/review_results.json"
-```
+**必须验证完整性**：检查 `review_results.json` 中是否还有 `conclusion` 为"无法识别"或空的条目。如有，说明仍有未完成的批次，需返回第 3 步继续。
 
-> **v1.3.0 起闭环继续升级：** `main.py` 在未提供正式阅片结果时，会自动导出：
+> **文件说明**（由 `run.py` / `main.py` 自动生成）：
 > - `review_requests.md`：逐张阅片请求与 prompt 汇总
-> - `review_manifest.json`：结构化请求清单（后续会用于结果校验）
-> - `review_results_stub.json`：待回填的占位结果 JSON
+> - `review_manifest.json`：结构化请求清单（用于结果校验）
+> - `review_results_stub.json`：占位总表（初始状态，全部为"待检视"）
 > - `review_batch_templates/batch_XXX.json`：按批拆好的回填模板
-> - `review_batch_filled/`：使用外部视觉模型自动回填后生成的批次结果目录（按需生成）
->
-> 推荐做法：
-> 1. **自动模式**：直接运行 `main.py --auto-review-model ...`，或后续运行 `auto_review_batches.py`，让外部视觉模型逐批回填并自动合并出 `review_results.json`
-> 2. **手工/半自动模式**：按批填写 `review_batch_templates/batch_XXX.json` 中每个 `item.result`
-> 3. 每完成一批，运行 `apply_review_batch.py` 合并到总表 JSON
-> 4. 全部批次完成后，再调用 `generate_report.py` 生成正式报告
+> - `review_batch_filled/`：已回填的批次结果目录（由第 3 步逐批生成）
+> - `review_results.json`：最终总表（由 `apply_review_batch.py` 逐批合并生成）
 
 JSON 格式（数组，每个元素对应一张切片的阅片结果）：
 ```json

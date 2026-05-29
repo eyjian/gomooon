@@ -3,8 +3,8 @@
 package mooonutils
 
 import (
-    "encoding/binary"
-    "io"
+	"encoding/binary"
+	"io"
 	"os"
 	"path/filepath"
 )
@@ -72,4 +72,9 @@ func IsPE(header []byte) bool {
 func IsMachO(header []byte) bool {
 	return len(header) >= 4 && (binary.LittleEndian.Uint32(header[:4]) == 0xfeedface ||
 		binary.BigEndian.Uint32(header[:4]) == 0xfeedface)
+}
+
+// IsLinux 判断当前操作系统是否为 Linux
+func IsLinux() bool {
+	return os.PathSeparator == '/' && filepath.IsAbs("/proc/self/exe")
 }

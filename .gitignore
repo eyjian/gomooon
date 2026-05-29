@@ -4,6 +4,7 @@
 .log
 .logs
 testdata/
+tmp/
 
 # Binaries for programs and plugins
 *.exe

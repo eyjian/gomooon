@@ -8,7 +8,7 @@ require (
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/pdfcpu/pdfcpu v0.11.0
 	github.com/stretchr/testify v1.10.0
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.1041
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.106
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/faceid v1.0.1041
 	github.com/tjfoc/gmsm v1.4.1
 	github.com/wechatpay-apiv3/wechatpay-go v0.2.20
@@ -36,6 +36,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ocr v1.3.98 // indirect
 	go.opentelemetry.io/otel v1.37.0 // indirect
 	golang.org/x/image v0.27.0 // indirect
 	golang.org/x/net v0.40.0 // indirect

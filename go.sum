@@ -95,6 +95,8 @@ github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/faceid v1.0.1041 h1:J4X
 github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/faceid v1.0.1041/go.mod h1:4VRXMjSoGwwnoF8Q7UG49pxbslGZN4Q183iiiMZlNok=
 github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ocr v1.3.98 h1:kin0IcVZFDPPmMO1Vk4wYRDeS1orupJjmq/e1v+QAqM=
 github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ocr v1.3.98/go.mod h1:Zcy3Lg1xYnGC4xQ8QEq77XTkUJD6MKzdxz0R4LT9jF0=
+github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ses v1.3.106 h1:9IPveO1ySFuczcS27iCSPyXOchKEI9Usr0eN2WGP82k=
+github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ses v1.3.106/go.mod h1:93Q6fGkSfZBs1WHE+05IVByOksliDJb91H2gz4dZqwg=
 github.com/tjfoc/gmsm v1.4.1 h1:aMe1GlZb+0bLjn+cKTPEvvn9oUEBlJitaZiiBwsbgho=
 github.com/tjfoc/gmsm v1.4.1/go.mod h1:j4INPkHWMrhJb38G+J6W4Tw0AbuN8Thu3PbdVYhVcTE=
 github.com/wechatpay-apiv3/wechatpay-go v0.2.20 h1:gS8oFn1bHGnyapR2Zb4aqTV6l4kJWgbtqjCq6k1L9DQ=

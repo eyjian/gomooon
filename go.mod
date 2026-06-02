@@ -37,6 +37,7 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ocr v1.3.98 // indirect
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ses v1.3.106 // indirect
 	go.opentelemetry.io/otel v1.37.0 // indirect
 	golang.org/x/image v0.27.0 // indirect
 	golang.org/x/net v0.40.0 // indirect

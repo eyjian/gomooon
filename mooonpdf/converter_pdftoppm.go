@@ -30,6 +30,7 @@ func NewPdftoppmConverter() *PdftoppmConverter {
 // outDir:  输出目录
 // pages:   页码列表，1-indexed，nil 或空表示全部页
 // options: 可选参数，nil 使用默认值
+// 安装字体：yum install -y google-noto-sans-cjk-sc-fonts 2>&1
 func (c *PdftoppmConverter) Convert(
 	pdfPath string, outDir string, pages []int, options *Pdf2ImageOptions,
 ) ([]string, *mooonerror.CError) {
@@ -43,13 +44,16 @@ func (c *PdftoppmConverter) Convert(
 		return nil, mooonerror.NewError(mooonerror.ErrCodeToolNotFound,
 			fmt.Sprintf("pdftoppm not available, please install poppler-utils: %s%s", err.Error(), installHint))
 	}
-
 	// 2. 检查 PDF 文件存在
 	if _, err := os.Stat(pdfPath); os.IsNotExist(err) {
 		return nil, mooonerror.NewError(mooonerror.ErrCodeFileNotFound,
 			fmt.Sprintf("PDF file not found: %s", pdfPath))
 	}
-
+	// 2.5 检查系统是否安装了 CJK 字体（避免中文乱码）
+	if !hasCJKFonts() {
+		return nil, mooonerror.NewError(mooonerror.ErrCodeFileOperate,
+			"no CJK fonts installed, Chinese characters may appear garbled; please install CJK fonts, e.g.: yum install google-noto-sans-cjk-sc-fonts (Simplified Chinese) or google-noto-sans-cjk-tc-fonts (Traditional Chinese)")
+	}
 	// 3. 检查输出目录
 	exists, isDir, _ := mooonutils.PathExists(outDir)
 	if !exists {
@@ -60,18 +64,16 @@ func (c *PdftoppmConverter) Convert(
 		return nil, mooonerror.NewError(mooonerror.ErrCodeFileOperate,
 			fmt.Sprintf("output path is not a directory: %s", outDir))
 	}
-
 	// 4. 填充默认参数
 	if options == nil {
 		options = &Pdf2ImageOptions{}
 	}
 	if options.DPI <= 0 {
-		options.DPI = 150
+		options.DPI = 300
 	}
 	if options.Format == "" {
 		options.Format = ImageFormatPNG
 	}
-
 	// 5. 构造输出文件名前缀
 	// pdftoppm 输出格式：前缀-1.png, 前缀-2.png, ...
 	// 文件名为原pdf文件名（含.pdf后缀）作为前缀，减少冲突
@@ -193,4 +195,50 @@ func getLinuxInstallHint() string {
 
 	// 无法识别发行版时，给出常见发行版的安装命令
 	return "apt-get install poppler-utils (Debian/Ubuntu) | dnf install poppler-utils (Fedora/RHEL) | yum install poppler-utils (CentOS) | apk add poppler-utils (Alpine)"
+}
+
+// hasCJKFonts 检查系统是否安装了 CJK（中日韩）字体
+// pdftoppm 依赖系统字体来渲染 PDF 中的中文等字符，缺少 CJK 字体会导致乱码
+func hasCJKFonts() bool {
+	// 使用 fc-list 检查系统是否注册了 CJK 字体
+	// :lang=zh 匹配支持中文的字体，:lang=ja 匹配日文，:lang=ko 匹配韩文
+	cmd := exec.Command("fc-list", ":lang=zh")
+	output, err := cmd.Output()
+	if err != nil {
+		// fc-list 不可用，尝试通过字体目录检查
+		return checkCJKFontsInDir()
+	}
+	return len(strings.TrimSpace(string(output))) > 0
+}
+
+// checkCJKFontsInDir 在 fc-list 不可用时，通过检查字体目录来判断是否存在 CJK 字体
+func checkCJKFontsInDir() bool {
+	fontDirs := []string{
+		"/usr/share/fonts",
+		"/usr/local/share/fonts",
+		"/root/.fonts",
+		"/root/.local/share/fonts",
+	}
+	cjkKeywords := []string{"cjk", "noto", "wqy", "chinese", "simsun", "simhei", "songti", "heiti"}
+	for _, dir := range fontDirs {
+		err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return nil
+			}
+			if info.IsDir() {
+				return nil
+			}
+			lowerPath := strings.ToLower(path)
+			for _, kw := range cjkKeywords {
+				if strings.Contains(lowerPath, kw) {
+					return fmt.Errorf("found") // 用 error 作为找到的标记
+				}
+			}
+			return nil
+		})
+		if err != nil && err.Error() == "found" {
+			return true
+		}
+	}
+	return false
 }

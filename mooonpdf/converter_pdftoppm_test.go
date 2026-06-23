@@ -46,8 +46,8 @@ func TestPdftoppmConvertAllPages(t *testing.T) {
 func TestPdftoppmConvertSpecificPages(t *testing.T) {
 	converter := NewPdftoppmConverter()
 
-	pdfPath := "./testdata/test.pdf"
-	outDir := "./testdata/output_pages"
+	pdfPath := "../testdata/test.pdf"
+	outDir := "../testdata/output_pages"
 
 	os.MkdirAll(outDir, os.ModePerm)
 	defer os.RemoveAll(outDir)
@@ -84,7 +84,7 @@ func TestPdftoppmConvertFileNotFound(t *testing.T) {
 
 	converter := NewPdftoppmConverter()
 
-	_, cerr := converter.Convert("./testdata/notexist.pdf", "./testdata", nil, nil)
+	_, cerr := converter.Convert("../testdata/notexist.pdf", "../testdata", nil, nil)
 	if cerr == nil {
 		t.Fatal("expected error, but got nil")
 	}
@@ -101,7 +101,7 @@ func TestPdftoppmConvertOutDirNotExist(t *testing.T) {
 
 	converter := NewPdftoppmConverter()
 
-	_, cerr := converter.Convert("./testdata/test.pdf", "./testdata/notexist", nil, nil)
+	_, cerr := converter.Convert("../testdata/test.pdf", "../testdata/notexist", nil, nil)
 	if cerr == nil {
 		t.Fatal("expected error, but got nil")
 	}

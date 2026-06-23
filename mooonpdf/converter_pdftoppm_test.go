@@ -130,3 +130,72 @@ func TestExtractPageNumber(t *testing.T) {
 		}
 	}
 }
+
+// go test -v -run="TestPdftoppmConvertWithCropBox"
+// 验证 UseCropBox 选项的效果：
+//
+//	UseCropBox=true  (默认) → 使用 CropBox，图片尺寸对应裁剪区域，内容充满整张图
+//	UseCropBox=false         → 使用 MediaBox，图片尺寸对应整张画布，内容可能只占一小部分
+func TestPdftoppmConvertWithCropBox(t *testing.T) {
+	converter := NewPdftoppmConverter()
+
+	pdfPath := "../testdata/test.pdf"
+
+	// 1) 默认行为（UseCropBox=nil，等同于 true）
+	outDirCrop := "../testdata/output_crop"
+	os.MkdirAll(outDirCrop, os.ModePerm)
+	defer os.RemoveAll(outDirCrop)
+
+	files, cerr := converter.Convert(pdfPath, outDirCrop, nil, nil)
+	if cerr != nil {
+		if cerr.ErrCode == mooonerror.ErrCodeToolNotFound {
+			t.Skipf("skip test: %s", cerr.ErrMsg)
+		}
+		t.Fatalf("Convert with cropbox failed: %s", cerr.ErrMsg)
+	}
+	if len(files) == 0 {
+		t.Fatal("expected at least one image file with cropbox, but got none")
+	}
+
+	// 2) 显式 UseCropBox=false（使用 MediaBox）
+	outDirMedia := "../testdata/output_media"
+	os.MkdirAll(outDirMedia, os.ModePerm)
+	defer os.RemoveAll(outDirMedia)
+
+	useCropBoxFalse := false
+	files2, cerr := converter.Convert(pdfPath, outDirMedia, nil, &Pdf2ImageOptions{
+		UseCropBox: &useCropBoxFalse,
+	})
+	if cerr != nil {
+		if cerr.ErrCode == mooonerror.ErrCodeToolNotFound {
+			t.Skipf("skip test: %s", cerr.ErrMsg)
+		}
+		t.Fatalf("Convert with mediabox failed: %s", cerr.ErrMsg)
+	}
+	if len(files2) == 0 {
+		t.Fatal("expected at least one image file with mediabox, but got none")
+	}
+
+	// 3) 显式 UseCropBox=true
+	outDirCropExplicit := "../testdata/output_crop_explicit"
+	os.MkdirAll(outDirCropExplicit, os.ModePerm)
+	defer os.RemoveAll(outDirCropExplicit)
+
+	useCropBoxTrue := true
+	files3, cerr := converter.Convert(pdfPath, outDirCropExplicit, nil, &Pdf2ImageOptions{
+		UseCropBox: &useCropBoxTrue,
+	})
+	if cerr != nil {
+		if cerr.ErrCode == mooonerror.ErrCodeToolNotFound {
+			t.Skipf("skip test: %s", cerr.ErrMsg)
+		}
+		t.Fatalf("Convert with explicit cropbox failed: %s", cerr.ErrMsg)
+	}
+	if len(files3) == 0 {
+		t.Fatal("expected at least one image file with explicit cropbox, but got none")
+	}
+
+	t.Logf("cropbox (default): %s", files[0])
+	t.Logf("mediabox (false):  %s", files2[0])
+	t.Logf("cropbox (true):    %s", files3[0])
+}

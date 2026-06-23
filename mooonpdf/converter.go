@@ -34,6 +34,27 @@ type Pdf2ImageOptions struct {
 	// Format 输出格式，默认 PNG（支持透明背景）
 	// 可选值：ImageFormatPNG（无损，文件较大）、ImageFormatJPG（有损压缩，文件较小）
 	Format ImageFormat
+
+	// UseCropBox 是否使用 CropBox 而非 MediaBox 来生成图片，默认 true
+	//
+	// PDF 页面有多个 Box 属性，决定了页面的大小和可见区域：
+	//   MediaBox - 页面的物理大小（"画布"），类似画纸的整体尺寸
+	//   CropBox  - 页面的裁剪区域（"画框"），即实际显示/打印的区域
+	//   TrimBox  - 页面的最终裁切区域（"成品尺寸"），用于印刷
+	//   BleedBox - 出血区域，印刷时超出 TrimBox 的部分
+	//   ArtBox   - 艺术品区域，页面中含意义内容的区域
+	//
+	// 当 MediaBox 与 CropBox 不一致时（常见于票据、发票等）：
+	//   UseCropBox=nil 或 true  → 使用 CropBox 渲染，只生成裁剪区域的图片，内容充满整张图
+	//   UseCropBox=false        → 使用 MediaBox 渲染，生成整张画布的图片，内容可能只占一小部分
+	//
+	// 推荐设置：
+	//   票据/发票/回单 → nil 或 true（内容通常只占 MediaBox 的一小部分，需裁剪到 CropBox）
+	//   普通文档/报告 → nil 或 true（多数文档 MediaBox == CropBox，设不设置效果一样）
+	//   需要保留完整页面白边 → 显式设为 false
+	//
+	// 使用指针类型以便区分"未设置"（nil，默认 true）和"显式设为 false"
+	UseCropBox *bool
 }
 
 // Pdf2ImageConverter PDF 转图片的转换器接口

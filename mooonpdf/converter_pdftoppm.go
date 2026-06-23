@@ -74,6 +74,8 @@ func (c *PdftoppmConverter) Convert(
 	if options.Format == "" {
 		options.Format = ImageFormatPNG
 	}
+	// UseCropBox 默认为 true（nil 视为 true）
+	useCropBox := options.UseCropBox == nil || *options.UseCropBox
 	// 5. 构造输出文件名前缀
 	// pdftoppm 输出格式：前缀-1.png, 前缀-2.png, ...
 	// 文件名为原pdf文件名（含.pdf后缀）作为前缀，减少冲突
@@ -83,7 +85,14 @@ func (c *PdftoppmConverter) Convert(
 	// 6. 构造命令参数
 	args := []string{}
 	args = append(args, fmt.Sprintf("-%s", string(options.Format))) // -png 或 -jpg
-	args = append(args, "-r", strconv.Itoa(options.DPI))            // -r 150
+	args = append(args, "-r", strconv.Itoa(options.DPI))            // -r 300
+
+	// 使用 CropBox 而非 MediaBox 渲染，避免内容只占画布一小部分
+	// 当 PDF 的 MediaBox 远大于 CropBox 时（常见于票据、发票），
+	// 不加 -cropbox 会生成整张 A4 画布的图片，内容挤在角落
+	if useCropBox {
+		args = append(args, "-cropbox")
+	}
 
 	// 指定页码范围
 	if len(pages) > 0 {

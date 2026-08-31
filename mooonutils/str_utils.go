@@ -3,6 +3,7 @@
 package mooonutils
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"math/rand"
@@ -30,7 +31,7 @@ var (
 func init() {
 	source := rand.NewSource(time.Now().UnixNano())
 	r = rand.New(source)
-	buffer.New = func() interface{} {
+	buffer.New = func() any {
 		return make([]byte, 0, 64)
 	}
 }
@@ -296,4 +297,40 @@ func ExtractUrlPath(urlStr string) string {
 // ConvertDateFormat 将 YYYY-MM-DD 格式的日期转换为 YYYYMMDD 格式
 func ConvertDateFormat(dateStr string) string {
 	return strings.ReplaceAll(dateStr, "-", "")
+}
+
+// StructToJsonString 将 struct（或任意可序列化对象）转为 JSON 字符串（紧凑格式）
+// 出错时返回空串和 error
+func StructToJsonString(v any) (string, error) {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+// StructToPrettyJsonString 将 struct（或任意可序列化对象）转为带缩进的 JSON 字符串（美化格式）
+// indent 为缩进字符串，如 "  "（两个空格）或 "\t"（制表符）
+// 出错时返回空串和 error
+func StructToPrettyJsonString(v any, indent string) (string, error) {
+	data, err := json.MarshalIndent(v, "", indent)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+// StructToJsonStringNoError 将 struct（或任意可序列化对象）转为 JSON 字符串（紧凑格式），忽略错误
+// 出错时返回空串，适用于记录日志等可忽略错误的场景
+func StructToJsonStringNoError(v any) string {
+	s, _ := StructToJsonString(v)
+	return s
+}
+
+// StructToPrettyJsonStringNoError 将 struct（或任意可序列化对象）转为带缩进的 JSON 字符串（美化格式），忽略错误
+// indent 为缩进字符串，如 "  "（两个空格）或 "\t"（制表符）
+// 出错时返回空串，适用于记录日志等可忽略错误的场景
+func StructToPrettyJsonStringNoError(v any, indent string) string {
+	s, _ := StructToPrettyJsonString(v, indent)
+	return s
 }

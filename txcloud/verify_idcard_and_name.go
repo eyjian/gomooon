@@ -10,7 +10,6 @@ import (
 )
 import (
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
-	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
 	faceid "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/faceid/v20180301"
 )
 
@@ -54,6 +53,7 @@ func (t *Face) BatchVerifyIdcardAndName(concurrency, failCount int, data map[str
 				v.Err = err
 				v.Consistent = false
 				v.ErrDesc = ""
+				v.RequestId = requestId // 出错时也记录 RequestId，便于定位问题
 			} else {
 				v.Err = nil
 				v.Consistent = ok
@@ -83,20 +83,18 @@ func (t *Face) BatchVerifyIdcardAndName(concurrency, failCount int, data map[str
 // 腾讯云频率限制：默认接口请求频率限制 100 次/秒
 // 返回值：一致性返回 true，否则返回 false，出错返回 error；第二个返回值为验证结果描述；第三个返回值为 RequestId
 // 参数 idcard 可含有空格
+// Result 结果码分类（其余结果码及未知码一律返回 *errors.TencentCloudSDKError，Code 为 Result 结果码，防止将腾讯云侧故障误判为不一致）：
+// "0" 一致；"-1" 不一致；"-2" 非法身份证号；"-3" 非法姓名；"-5" 证件库中无此身份证记录，均视为不一致（确定性否定，重试结果不变）
 func (t *Face) VerifyIdcardAndName(idcard, name string) (bool, string, string, error) {
 	client, _ := faceid.NewClient(t.credential, "", t.clientProfile)
 	request := faceid.NewIdCardVerificationRequest()
 	request.IdCard = common.StringPtr(strings.ReplaceAll(idcard, " ", ""))
 	request.Name = common.StringPtr(name)
 
-	// 发起请求
+	// 发起请求（出错时从 err 中提取 RequestId 一并返回，便于定位问题）
 	response, err := client.IdCardVerification(request)
-	if _, ok := err.(*errors.TencentCloudSDKError); ok {
-		//return false, "", fmt.Errorf("a txcloud API error has returned: %s", err.Error())
-		return false, "", "", err
-	}
 	if err != nil {
-		return false, "", "", err
+		return false, "", extractRequestId(err), err
 	}
 
 	// 解析响应
@@ -107,9 +105,6 @@ func (t *Face) VerifyIdcardAndName(idcard, name string) (bool, string, string, e
 		return false, "", "", err
 	}
 
-	// 判断是否一致
-	if resp.Response.Result != "0" {
-		return false, resp.Response.Description, resp.Response.RequestId, nil // 不一致
-	}
-	return true, resp.Response.Description, resp.Response.RequestId, nil // 一致
+	// 判断是否一致（仅 "0" 为一致，确定性否定码判不一致，服务异常等其余码返回错误）
+	return judgeFaceVerifyResult(&resp, idcardNameInconsistentResults)
 }

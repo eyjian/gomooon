@@ -3,10 +3,53 @@
 package txcloud
 
 import (
+	"os"
+
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
 )
+
+// 各服务的默认 endpoint
+const (
+	defaultFaceidEndpoint = "faceid.tencentcloudapi.com"
+	defaultSesEndpoint    = "ses.tencentcloudapi.com"
+	defaultOcrEndpoint    = "ocr.tencentcloudapi.com"
+)
+
+// 各服务 endpoint 对应的环境变量名
+const (
+	envFaceidEndpoint = "TXCLOUD_FACEID_ENDPOINT"
+	envSesEndpoint    = "TXCLOUD_SES_ENDPOINT"
+	envOcrEndpoint    = "TXCLOUD_OCR_ENDPOINT"
+)
+
+// Option 腾讯云可选配置，用于各构造函数的可变参数
+type Option func(*TxCloud)
+
+// WithEndpoint 显式指定 endpoint，优先级高于环境变量和默认值
+func WithEndpoint(endpoint string) Option {
+	return func(t *TxCloud) {
+		t.Endpoint = endpoint
+	}
+}
+
+// resolveEndpoint 按优先级解析 endpoint：WithEndpoint option > 环境变量 > 默认值
+func resolveEndpoint(envKey, defaultEndpoint string, opts []Option) string {
+	txCloud := &TxCloud{}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(txCloud)
+		}
+	}
+	if txCloud.Endpoint != "" {
+		return txCloud.Endpoint
+	}
+	if endpoint := os.Getenv(envKey); endpoint != "" {
+		return endpoint
+	}
+	return defaultEndpoint
+}
 
 // TxCloud 腾讯云
 type TxCloud struct {

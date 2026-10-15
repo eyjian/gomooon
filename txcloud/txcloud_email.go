@@ -107,11 +107,13 @@ var _ EmailSender = (*SesEmailSender)(nil)
 //
 //	secretId / secretKey 腾讯云访问密钥
 //	region              腾讯云地域，传空字符串将使用默认值 "ap-hongkong"
-func NewSesEmailSender(secretId, secretKey, region string) *SesEmailSender {
+//
+// endpoint 解析优先级：WithEndpoint option > 环境变量 TXCLOUD_SES_ENDPOINT > 默认值 ses.tencentcloudapi.com
+func NewSesEmailSender(secretId, secretKey, region string, opts ...Option) *SesEmailSender {
 	if region == "" {
 		region = defaultEmailRegion
 	}
-	tx := NewTxCloud(secretId, secretKey, "ses.tencentcloudapi.com")
+	tx := NewTxCloud(secretId, secretKey, resolveEndpoint(envSesEndpoint, defaultSesEndpoint, opts))
 	tx.Region = region
 	return &SesEmailSender{
 		TxCloud: tx,

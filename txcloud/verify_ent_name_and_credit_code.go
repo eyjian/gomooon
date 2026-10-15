@@ -13,9 +13,6 @@ import (
 	ocr "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ocr/v20181119"
 )
 
-// ocrEndpoint OCR 服务的接入点
-const ocrEndpoint = "ocr.tencentcloudapi.com"
-
 // EntVerifier 企业核验器（基于腾讯云 OCR），用于企业名称、统一社会信用代码等要素核验
 type EntVerifier struct {
 	*TxCloud // 复用 credential、clientProfile 等
@@ -23,9 +20,11 @@ type EntVerifier struct {
 
 // NewEntVerifier 创建企业核验器
 // 密钥在控制台 https://console.cloud.tencent.com/cam/capi 上获取
-func NewEntVerifier(secretId, secretKey string) *EntVerifier {
+//
+// endpoint 解析优先级：WithEndpoint option > 环境变量 TXCLOUD_OCR_ENDPOINT > 默认值 ocr.tencentcloudapi.com
+func NewEntVerifier(secretId, secretKey string, opts ...Option) *EntVerifier {
 	return &EntVerifier{
-		TxCloud: NewTxCloud(secretId, secretKey, ocrEndpoint),
+		TxCloud: NewTxCloud(secretId, secretKey, resolveEndpoint(envOcrEndpoint, defaultOcrEndpoint, opts)),
 	}
 }
 

@@ -38,11 +38,13 @@ var _ InvoiceRecognizer = (*GeneralInvoiceRecognizer)(nil)
 //
 //	secretId / secretKey 腾讯云访问密钥
 //	region              腾讯云地域，传空字符串将使用默认值 "ap-guangzhou"
-func NewGeneralInvoiceRecognizer(secretId, secretKey, region string) *GeneralInvoiceRecognizer {
+//
+// endpoint 解析优先级：WithEndpoint option > 环境变量 TXCLOUD_OCR_ENDPOINT > 默认值 ocr.tencentcloudapi.com
+func NewGeneralInvoiceRecognizer(secretId, secretKey, region string, opts ...Option) *GeneralInvoiceRecognizer {
 	if region == "" {
 		region = defaultGeneralInvoiceRegion
 	}
-	tx := NewTxCloud(secretId, secretKey, "ocr.tencentcloudapi.com")
+	tx := NewTxCloud(secretId, secretKey, resolveEndpoint(envOcrEndpoint, defaultOcrEndpoint, opts))
 	tx.Region = region
 	return &GeneralInvoiceRecognizer{
 		TxCloud: tx,
